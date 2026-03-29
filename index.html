@@ -705,60 +705,120 @@ footer { border-top:1px solid var(--border); padding:3rem 3.5rem; display:flex; 
     <p class="eyebrow reveal">— schedule</p>
     <p class="lead reveal">次回の開催。<em>ふらっと来てください。</em></p>
 
-    <div class="cal-list reveal">
-
-      <!-- ▼ イベント追加・編集はこのブロック内を書き換える -->
-      <!-- 申込URL：peatixのイベントページURLを href="" に入れる -->
-      <!-- connpassのURLも同様 / URLが未定の場合は href="#" のままでOK -->
-
-      <div class="cal-row">
-        <div class="cal-date-block">
-          <div class="cal-date">14</div>
-          <div class="cal-date-sub">Apr · Sat</div>
-        </div>
-        <div class="cal-body">
-          <div class="cal-type t-topic">1 day topic</div>
-          <div class="cal-title">読書会</div>
-          <div class="cal-meta">13:00 – 15:00 &nbsp;·&nbsp; 場所未定</div>
-        </div>
-        <div class="cal-action">
-        </div>
-      </div>
-
-      <div class="cal-row">
-        <div class="cal-date-block">
-          <div class="cal-date">18</div>
-          <div class="cal-date-sub">Apr · Wed</div>
-        </div>
-        <div class="cal-body">
-          <div class="cal-type t-bar">1 day bar</div>
-          <div class="cal-title">一日バー</div>
-          <div class="cal-meta">18:00 – 21:30 &nbsp;·&nbsp; CAFE &amp; BAR HIVE</div>
-        </div>
-        <div class="cal-action">
-          <a class="cal-link t-bar" href="https://peatix.com/group/16444575/events/past" target="_blank">申込 → peatix</a>
-        </div>
-      </div>
-
-      <div class="cal-row">
-        <div class="cal-date-block">
-          <div class="cal-date">26</div>
-          <div class="cal-date-sub">Apr · Fri</div>
-        </div>
-        <div class="cal-body">
-          <div class="cal-type t-desk">1 day desk</div>
-          <div class="cal-title">もくもく会</div>
-          <div class="cal-meta">18:00 – 21:30 &nbsp;·&nbsp; 港区立男女平等参画センター</div>
-        </div>
-        <div class="cal-action">
-          <a class="cal-link" href="https://1daydesk.connpass.com/event/" target="_blank">申込 → connpass</a>
-        </div>
-      </div>
-
-      <!-- ▲ ここまで -->
-
+    <div class="cal-list reveal" id="cal-list">
+      <div class="cal-loading">読み込み中...</div>
     </div>
+  </div>
+</section>
 
+<script>
+// ── 手動登録イベント（peatix / 読書会など）──────────────────
+// 開催が決まったらここに追加する。過去の日付は自動的に非表示になる。
+const MANUAL_EVENTS = [
+  {
+    date: "2025-04-18",
+    time: "18:00 – 21:30",
+    place: "CAFE &amp; BAR HIVE",
+    type: "bar",
+    typeLabel: "1 day bar",
+    title: "一日バー",
+    url: "https://peatix.com/group/16444575/events/past",
+    urlLabel: "申込 → peatix"
+  },
+  // 読書会（peatixページ作成後にurlを入れる）
+  // {
+  //   date: "2025-04-14",
+  //   time: "13:00 – 15:00",
+  //   place: "場所未定",
+  //   type: "topic",
+  //   typeLabel: "1 day topic",
+  //   title: "読書会",
+  //   url: "",
+  //   urlLabel: ""
+  // },
+];
+
+// ── connpass API（1daydesk グループ）────────────────────────
+const CONNPASS_API = "https://connpass.com/api/v1/event/?nickname=1daydesk&order=2&count=10";
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const month = d.toLocaleString("en-US", { month: "short" });
+  const day = d.getDate();
+  const weekday = d.toLocaleString("en-US", { weekday: "short" });
+  return { day, sub: `${month} · ${weekday}` };
+}
+
+function buildRow(ev) {
+  const { day, sub } = formatDate(ev.date);
+  const actionHtml = ev.url
+    ? `<a class="cal-link ${ev.type === 'bar' ? 't-bar' : ev.type === 'topic' ? 't-topic' : ''}" href="${ev.url}" target="_blank">${ev.urlLabel}</a>`
+    : "";
+  return `
+    <div class="cal-row">
+      <div class="cal-date-block">
+        <div class="cal-date">${day}</div>
+        <div class="cal-date-sub">${sub}</div>
+      </div>
+      <div class="cal-body">
+        <div class="cal-type t-${ev.type}">${ev.typeLabel}</div>
+        <div class="cal-title">${ev.title}</div>
+        <div class="cal-meta">${ev.time}&nbsp;·&nbsp;${ev.place}</div>
+      </div>
+      <div class="cal-action">${actionHtml}</div>
+    </div>`;
+}
+
+async function loadCalendar() {
+  const list = document.getElementById("cal-list");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // connpassから取得
+  let connpassEvents = [];
+  try {
+    const res = await fetch(CONNPASS_API);
+    const data = await res.json();
+    connpassEvents = (data.events || [])
+      .filter(e => new Date(e.started_at) >= today)
+      .map(e => {
+        const d = new Date(e.started_at);
+        const end = new Date(e.ended_at);
+        const pad = n => String(n).padStart(2, "0");
+        return {
+          date: e.started_at.slice(0, 10),
+          time: `${pad(d.getHours())}:${pad(d.getMinutes())} – ${pad(end.getHours())}:${pad(end.getMinutes())}`,
+          place: e.place || "場所未定",
+          type: "desk",
+          typeLabel: "1 day desk",
+          title: e.title,
+          url: e.event_url,
+          urlLabel: "申込 → connpass"
+        };
+      });
+  } catch (e) {
+    console.warn("connpass API error:", e);
+  }
+
+  // 手動イベント（未来のみ）
+  const manualEvents = MANUAL_EVENTS.filter(e => new Date(e.date) >= today);
+
+  // 合体して日付順にソート
+  const all = [...connpassEvents, ...manualEvents]
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (all.length === 0) {
+    list.innerHTML = `<div class="cal-empty"><span>現在予定されているイベントはありません</span></div>`;
+    return;
+  }
+  list.innerHTML = all.map(buildRow).join("");
+}
+
+loadCalendar();
+</script>
+
+<section class="section" id="schedule-ig" style="padding-top:2rem; padding-bottom:5rem; border-bottom:none;">
+  <div class="inner">
     <!-- Instagram -->
     <div class="ig-section reveal">
       <div class="ig-header">
