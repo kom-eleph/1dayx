@@ -705,117 +705,45 @@ footer { border-top:1px solid var(--border); padding:3rem 3.5rem; display:flex; 
     <p class="eyebrow reveal">— schedule</p>
     <p class="lead reveal">次回の開催。<em>ふらっと来てください。</em></p>
 
-    <div class="cal-list reveal" id="cal-list">
-      <div class="cal-loading">読み込み中...</div>
+    <div class="cal-list reveal">
+
+      <!-- ▼ イベント追加・編集はここを書き換える。日付・時間・場所・peatix URL を更新する -->
+
+      <div class="cal-row">
+        <div class="cal-date-block">
+          <div class="cal-date">27</div>
+          <div class="cal-date-sub">Mar · Thu</div>
+        </div>
+        <div class="cal-body">
+          <div class="cal-type t-bar">1 day bar</div>
+          <div class="cal-title">ふらっと立ち寄る1日だけのBAR</div>
+          <div class="cal-meta">日本橋馬喰町</div>
+        </div>
+        <div class="cal-action">
+          <a class="cal-link t-bar" href="https://1daybar0327.peatix.com/view" target="_blank">申込 → peatix</a>
+        </div>
+      </div>
+
+      <div class="cal-row">
+        <div class="cal-date-block">
+          <div class="cal-date">29</div>
+          <div class="cal-date-sub">Mar · Sat</div>
+        </div>
+        <div class="cal-body">
+          <div class="cal-type t-desk">1 day desk</div>
+          <div class="cal-title">作業がなくてもOKなもくもく会</div>
+          <div class="cal-meta">場所未定</div>
+        </div>
+        <div class="cal-action">
+          <a class="cal-link" href="https://1daydesk0329.peatix.com/view" target="_blank">申込 → peatix</a>
+        </div>
+      </div>
+
+      <!-- ▲ ここまで -->
+
     </div>
   </div>
 </section>
-
-<script>
-// ── 手動登録イベント（peatix / 読書会など）──────────────────
-// 開催が決まったらここに追加する。過去の日付は自動的に非表示になる。
-const MANUAL_EVENTS = [
-  {
-    date: "2025-04-18",
-    time: "18:00 – 21:30",
-    place: "CAFE &amp; BAR HIVE",
-    type: "bar",
-    typeLabel: "1 day bar",
-    title: "一日バー",
-    url: "https://peatix.com/group/16444575/events/past",
-    urlLabel: "申込 → peatix"
-  },
-  // 読書会（peatixページ作成後にurlを入れる）
-  // {
-  //   date: "2025-04-14",
-  //   time: "13:00 – 15:00",
-  //   place: "場所未定",
-  //   type: "topic",
-  //   typeLabel: "1 day topic",
-  //   title: "読書会",
-  //   url: "",
-  //   urlLabel: ""
-  // },
-];
-
-// ── connpass API（1daydesk グループ）────────────────────────
-const CONNPASS_API = "/.netlify/functions/connpass?ids=389171,389170";
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  const month = d.toLocaleString("en-US", { month: "short" });
-  const day = d.getDate();
-  const weekday = d.toLocaleString("en-US", { weekday: "short" });
-  return { day, sub: `${month} · ${weekday}` };
-}
-
-function buildRow(ev) {
-  const { day, sub } = formatDate(ev.date);
-  const actionHtml = ev.url
-    ? `<a class="cal-link ${ev.type === 'bar' ? 't-bar' : ev.type === 'topic' ? 't-topic' : ''}" href="${ev.url}" target="_blank">${ev.urlLabel}</a>`
-    : "";
-  return `
-    <div class="cal-row">
-      <div class="cal-date-block">
-        <div class="cal-date">${day}</div>
-        <div class="cal-date-sub">${sub}</div>
-      </div>
-      <div class="cal-body">
-        <div class="cal-type t-${ev.type}">${ev.typeLabel}</div>
-        <div class="cal-title">${ev.title}</div>
-        <div class="cal-meta">${ev.time}&nbsp;·&nbsp;${ev.place}</div>
-      </div>
-      <div class="cal-action">${actionHtml}</div>
-    </div>`;
-}
-
-async function loadCalendar() {
-  const list = document.getElementById("cal-list");
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // connpassから取得
-  let connpassEvents = [];
-  try {
-    const res = await fetch(CONNPASS_API);
-    const data = await res.json();
-    connpassEvents = (data.events || [])
-      .filter(e => new Date(e.started_at) >= today)
-      .map(e => {
-        const d = new Date(e.started_at);
-        const end = new Date(e.ended_at);
-        const pad = n => String(n).padStart(2, "0");
-        return {
-          date: e.started_at.slice(0, 10),
-          time: `${pad(d.getHours())}:${pad(d.getMinutes())} – ${pad(end.getHours())}:${pad(end.getMinutes())}`,
-          place: e.place || "場所未定",
-          type: "desk",
-          typeLabel: "1 day desk",
-          title: e.title,
-          url: e.event_url,
-          urlLabel: "申込 → connpass"
-        };
-      });
-  } catch (e) {
-    console.warn("connpass API error:", e);
-  }
-
-  // 手動イベント（未来のみ）
-  const manualEvents = MANUAL_EVENTS.filter(e => new Date(e.date) >= today);
-
-  // 合体して日付順にソート
-  const all = [...connpassEvents, ...manualEvents]
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  if (all.length === 0) {
-    list.innerHTML = `<div class="cal-empty"><span>現在予定されているイベントはありません</span></div>`;
-    return;
-  }
-  list.innerHTML = all.map(buildRow).join("");
-}
-
-loadCalendar();
-</script>
 
 <section class="section" id="schedule-ig" style="padding-top:2rem; padding-bottom:5rem; border-bottom:none;">
   <div class="inner">
