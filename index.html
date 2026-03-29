@@ -739,7 +739,7 @@ const MANUAL_EVENTS = [
 ];
 
 // ── connpass API（1daydesk グループ）────────────────────────
-const CONNPASS_API = "https://connpass.com/api/v1/event/?event_id=389171,389170&order=2";
+const CONNPASS_API = "/.netlify/functions/connpass?ids=389171,389170";
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
