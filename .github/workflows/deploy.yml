@@ -12,7 +12,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to VPS
+      - name: Copy files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "."
+          target: "~/1dayX/site"
+          rm: true
+
+      - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -20,16 +30,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/1dayX
-            git -C ~/1dayX/site init
-            git -C ~/1dayX/site fetch https://github.com/kom-eleph/1dayx.git main
-            git -C ~/1dayX/site checkout FETCH_HEAD -- .
+            docker compose up -d --build site
             docker compose restart nginx
-
-      - name: Copy files to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "index.html"
-          target: "~/1dayX/site/"

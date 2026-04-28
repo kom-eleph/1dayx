@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --border: rgba(0,0,0,0.08);
+  --border-mid: rgba(0,0,0,0.14);
+  --text: #1a1a18;
+  --muted: rgba(26,26,24,0.62);
+  --dim: rgba(26,26,24,0.46);
+  --accent: #7a6a4e;
+  --green: #3a6b52;
+  --purple: #5a4a7a;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Serif JP', serif;
+  font-weight: 200;
+  overflow-x: hidden;
+}
