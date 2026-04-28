@@ -21,6 +21,7 @@ jobs:
           source: "."
           target: "~/1dayX/site"
           rm: true
+          strip_components: 1
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.0
@@ -30,5 +31,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/1dayX
+            docker compose stop site
+            docker compose rm -f site
             docker compose up -d --build site
-            docker compose restart nginx
