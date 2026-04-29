@@ -25,8 +25,11 @@ export const metadata: Metadata = {
   title: "1 day X — 偶然の交差が、そっと起きるような余白。",
   description: "目的も、評価もない。何者でもないまま、ただそこにいられる場所。desk · bar · topic — Tokyo",
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icon_512.png',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    apple: { url: '/apple-icon.png', sizes: '180x180' },
   },
   openGraph: {
     type: "website",
