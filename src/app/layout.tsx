@@ -24,6 +24,10 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "1 day X — 偶然の交差が、そっと起きるような余白。",
   description: "目的も、評価もない。何者でもないまま、ただそこにいられる場所。desk · bar · topic — Tokyo",
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icon_512.png',
+  },
   openGraph: {
     type: "website",
     title: "1 day X",
