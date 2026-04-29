@@ -19,9 +19,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "."
-          target: "~/1dayX/site"
-          rm: true
-          strip_components: 1
+          target: "~/1dayX/site/"
+          rm: false
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.0

@@ -2,113 +2,151 @@ const modules = [
   {
     id: '01',
     label: '1 day desk',
-    name: 'もくもく会',
     cross: 'INNER × THINGS',
-    color: 'var(--accent)',
-    text: [
-      '作業でも、ただ座っていてもいい。人と比べない時間が、ここにはある。',
-      '場には記事や論考が散りばめられている。承認されなくても、うまく語れなくても、何かに夢中になれる余地がある。',
-    ],
+    text: '作業してもしなくてもいい。\nただ、机の前にいる。',
+    subtext: '事物・内面との交差。',
+    info: '港区リーブラ｜500円',
   },
   {
     id: '02',
     label: '1 day bar',
-    name: '一日バー',
     cross: 'SELF × OTHER',
-    color: 'var(--green)',
-    text: [
-      '肩書きも、役割も、あまり関係ない。何者でもないままで、隣に座れる場所。',
-      '何かを証明しなくていい。ただ同じ空間に居合わせて、偶然の会話や刺激がそっと生まれればいい。',
-    ],
+    text: '何者でもない夜を、\n誰かと過ごす。',
+    subtext: '他者との交差。',
+    info: '馬喰町 Cafe & Bar HIVE｜1,000円',
   },
   {
     id: '03',
     label: '1 day topic',
-    name: '読書会',
     cross: 'THOUGHT × THOUGHT',
-    color: 'var(--purple)',
-    text: [
-      '肩書きを外して、言葉だけで向き合う。そんな対話が生まれやすい場にしたい。',
-      '正解も不正解もなく、語られた言葉がただそこにある。そういう時間があってもいいと思う。',
-    ],
+    text: '正解を出さなくていい。\nただ、言葉を置いていく。',
+    subtext: '思考との交差。',
+    info: '中央区エリア｜500円',
   },
 ];
 
 export default function Modules() {
   return (
-    <section style={{
-      padding: '7rem 3.5rem',
-      borderBottom: '1px solid var(--border)'
-    }} id="modules">
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <p style={{
-          fontFamily: 'var(--font-space-mono)',
-          fontSize: '.58rem',
-          letterSpacing: '.38em',
-          color: 'var(--dim)',
-          textTransform: 'uppercase',
-          marginBottom: '4rem'
-        }}>— modules</p>
+    <section className="section" id="modules">
+      <style>{`
+        .module-row {
+          display: grid;
+          grid-template-columns: 48px 180px 1fr;
+          gap: 2.5rem;
+          align-items: start;
+          padding: 2.5rem 0;
+          border-top: 1px solid var(--border);
+        }
+        .module-row:last-child {
+          border-bottom: 1px solid var(--border);
+        }
+        @media (max-width: 768px) {
+          .module-row {
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
+            padding: 2rem 0;
+          }
+          .module-id { display: none; }
+          .module-meta { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+        }
+      `}</style>
+      <div className="inner">
+        <div style={{ marginBottom: '4rem' }}>
+          <span className="label">— modules</span>
+          <p style={{
+            fontFamily: 'var(--font-cormorant)',
+            fontSize: 'clamp(1.6rem,3vw,2.5rem)',
+            fontWeight: 300,
+            lineHeight: 1.6,
+            marginBottom: '1.5rem'
+          }}>
+            日常の中で、<br />
+            <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>
+              自分の周縁を揺らす場所。
+            </span>
+          </p>
+          <p style={{
+            fontFamily: 'var(--font-space-mono)',
+            fontSize: '.7rem',
+            letterSpacing: '.15em',
+            color: 'var(--accent)',
+            marginBottom: '1rem'
+          }}>
+            X は、あらゆる交差を意味する。
+          </p>
+          <p style={{
+            fontSize: '.9rem',
+            fontWeight: 300,
+            color: 'var(--muted)',
+            lineHeight: 2.5,
+            letterSpacing: '.04em'
+          }}>
+            他者との交差。思考との交差。事物との交差。<br />
+            それぞれに、一日だけの形がある。
+          </p>
+        </div>
         <div>
           {modules.map((mod) => (
-            <div key={mod.id} style={{
-              display: 'grid',
-              gridTemplateColumns: '48px 190px 1fr',
-              gap: '3rem',
-              alignItems: 'start',
-              padding: '3rem 0',
-              borderTop: '1px solid var(--border)',
-            }}>
-              <span style={{
+            <div key={mod.id} className="module-row">
+              <span className="module-id" style={{
                 fontFamily: 'var(--font-space-mono)',
-                fontSize: '.55rem',
+                fontSize: '.6rem',
                 letterSpacing: '.2em',
                 color: 'var(--dim)',
                 paddingTop: '.2rem'
               }}>
                 {mod.id}
               </span>
-              <div>
+              <div className="module-meta">
                 <div style={{
                   fontFamily: 'var(--font-cormorant)',
                   fontSize: '1.4rem',
                   fontWeight: 300,
                   fontStyle: 'italic',
-                  letterSpacing: '.08em',
-                  color: 'var(--dim)',
-                  marginBottom: '.5rem'
+                  color: 'var(--accent)',
+                  marginBottom: '.4rem'
                 }}>
                   {mod.label}
                 </div>
                 <div style={{
-                  fontFamily: 'var(--font-cormorant)',
-                  fontSize: '1.9rem',
-                  fontWeight: 300,
-                  lineHeight: 1,
-                  marginBottom: '1rem',
-                  color: mod.color
-                }}>
-                  {mod.name}
-                </div>
-                <div style={{
                   fontFamily: 'var(--font-space-mono)',
-                  fontSize: '.55rem',
-                  letterSpacing: '.16em',
-                  color: 'var(--dim)'
+                  fontSize: '.6rem',
+                  letterSpacing: '.14em',
+                  color: 'var(--dim)',
+                  marginBottom: '.8rem'
                 }}>
                   {mod.cross}
                 </div>
+                <div style={{
+                  fontSize: '.75rem',
+                  letterSpacing: '.08em',
+                  color: 'var(--dim)',
+                  opacity: .8
+                }}>
+                  {mod.info}
+                </div>
               </div>
-              <div style={{
-                fontSize: '.82rem',
-                lineHeight: 2.4,
-                color: 'var(--muted)',
-                fontWeight: 200,
-                letterSpacing: '.03em'
-              }}>
-                {mod.text.map((t, i) => (
-                  <p key={i} style={{ marginTop: i > 0 ? '1em' : 0 }}>{t}</p>
-                ))}
+              <div>
+                <p style={{
+                  fontSize: '.9rem',
+                  lineHeight: 2.4,
+                  color: 'var(--muted)',
+                  fontWeight: 300,
+                  letterSpacing: '.03em',
+                  marginBottom: '.8rem',
+                  whiteSpace: 'pre-line'
+                }}>
+                  {mod.text}
+                </p>
+                <p style={{
+                  fontFamily: 'var(--font-cormorant)',
+                  fontSize: '1rem',
+                  fontStyle: 'italic',
+                  color: 'var(--accent)',
+                  letterSpacing: '.04em'
+                }}>
+                  {mod.subtext}
+                </p>
               </div>
             </div>
           ))}

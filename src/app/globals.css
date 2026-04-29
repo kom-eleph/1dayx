@@ -3,23 +3,74 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f7f6f2;
+  --bg: #f8fbfc;
   --surface: #ffffff;
-  --border: rgba(0,0,0,0.08);
-  --border-mid: rgba(0,0,0,0.14);
+  --border: rgba(0,165,191,0.15);
+  --border-mid: rgba(0,165,191,0.25);
   --text: #1a1a18;
   --muted: rgba(26,26,24,0.62);
   --dim: rgba(26,26,24,0.46);
-  --accent: #7a6a4e;
+  --accent: #00A5BF;
+  --accent-light: rgba(0,165,191,0.08);
   --green: #3a6b52;
   --purple: #5a4a7a;
+  --section-padding: 6rem 2rem;
+  --inner-width: 1000px;
 }
 
 html { scroll-behavior: smooth; }
+
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Noto Serif JP', serif;
-  font-weight: 200;
+  font-family: var(--font-noto), serif;
+  font-weight: 300;
   overflow-x: hidden;
+}
+
+.inner {
+  max-width: var(--inner-width);
+  margin: 0 auto;
+  width: 100%;
+}
+
+.section {
+  padding: var(--section-padding);
+  border-bottom: 1px solid var(--border);
+}
+
+.label {
+  font-family: var(--font-space-mono), monospace;
+  font-size: .75rem;
+  letter-spacing: .2em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --section-padding: 3rem 1.5rem;
+  }
+  body { font-weight: 300; }
+
+  .label {
+    font-size: .7rem;
+  }
+}
+
+/* ホバーエフェクト */
+a {
+  transition: opacity .2s ease;
+}
+a:hover {
+  opacity: .7;
+}
+
+.module-row {
+  transition: background .2s ease;
+}
+.module-row:hover {
+  background: var(--accent-light);
 }
