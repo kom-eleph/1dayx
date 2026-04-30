@@ -42,7 +42,7 @@ export default function LineQR() {
         }}>
           次回の開催情報・申し込みは公式LINEにて。
         </p>
-        <a href="https://lin.ee/your-line-id" target="_blank" rel="noopener noreferrer" style={btnStyle}>
+        <a href="https://lin.ee/vOHgYdZ" target="_blank" rel="noopener noreferrer" style={btnStyle}>
           LINE で友だち追加
         </a>
         <div style={{
