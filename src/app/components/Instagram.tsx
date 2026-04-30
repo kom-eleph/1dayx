@@ -38,17 +38,48 @@ export default function Instagram() {
           grid-template-columns: 1fr 1fr 1fr;
           gap: 1rem;
         }
-        .ig-item { overflow: hidden; border-radius: 4px; }
+        /* Instagram埋め込みが強制するmin-widthを上書き */
+        .ig-item {
+          overflow: hidden;
+          border-radius: 4px;
+          width: 100%;
+          min-width: 0;
+        }
+        .ig-item iframe,
+        .ig-item blockquote.instagram-media {
+          min-width: 0 !important;
+          max-width: 100% !important;
+          width: 100% !important;
+        }
         @media (max-width: 768px) {
-          .ig-grid { grid-template-columns: 1fr; }
+          .ig-grid {
+            grid-template-columns: 1fr;
+          }
+          /* スマホではセクションのpadding分を考慮してはみ出しを防ぐ */
+          .ig-item {
+            max-width: 100%;
+          }
         }
       `}</style>
+
+      {/* Instagram埋め込みのmin-width強制を打ち消すグローバルCSS */}
+      <style>{`
+        .instagram-media {
+          min-width: 0 !important;
+          max-width: 100% !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+      `}</style>
+
       <div className="inner">
         <div style={{
           display: 'flex',
           alignItems: 'baseline',
           justifyContent: 'space-between',
-          marginBottom: '1.8rem'
+          marginBottom: '1.8rem',
+          flexWrap: 'wrap',
+          gap: '.5rem'
         }}>
           <span className="label" style={{ marginBottom: 0 }}>— instagram @1_day_bar</span>
           <a href="https://www.instagram.com/1_day_bar/" target="_blank" rel="noopener noreferrer" style={linkStyle}>
@@ -58,7 +89,7 @@ export default function Instagram() {
         <div className="ig-grid">
           {posts.map((url) => (
             <div key={url} className="ig-item" dangerouslySetInnerHTML={{
-              __html: `<blockquote class="instagram-media" data-instgrm-permalink="${url}?utm_source=ig_embed&utm_campaign=loading" data-instgrm-version="14" style="min-width:0;max-width:100%;width:100%;margin:0;"></blockquote>`
+              __html: `<blockquote class="instagram-media" data-instgrm-permalink="${url}?utm_source=ig_embed&utm_campaign=loading" data-instgrm-version="14" style="min-width:0!important;max-width:100%!important;width:100%!important;margin:0;box-sizing:border-box;"></blockquote>`
             }} />
           ))}
         </div>
