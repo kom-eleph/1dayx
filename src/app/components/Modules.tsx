@@ -80,8 +80,21 @@ export default function Modules() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = active ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    const html = document.documentElement;
+    if (active) {
+      document.body.style.overflow = 'hidden';
+      html.style.overflowX = 'hidden';
+      html.style.touchAction = 'pan-y pinch-zoom';
+    } else {
+      document.body.style.overflow = '';
+      html.style.overflowX = '';
+      html.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      html.style.overflowX = '';
+      html.style.touchAction = '';
+    };
   }, [active]);
 
   return (
@@ -130,11 +143,12 @@ export default function Modules() {
           border-radius: 24px 24px 0 0;
           width: 100%;
           max-width: 100vw;
-          max-height: 92dvh; overflow-y: auto;
+          max-height: 92dvh; overflow-y: auto; overflow-x: hidden;
           padding: 0 1.5rem 3rem;
           transform: translateY(40px);
           transition: transform .3s cubic-bezier(.16,1,.3,1);
           box-sizing: border-box;
+          touch-action: pan-y pinch-zoom;
         }
         .modal-overlay.open .modal-panel { transform: translateY(0); }
         @media (min-width: 769px) {
