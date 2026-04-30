@@ -98,7 +98,7 @@ export default function Modules() {
           transition: background .18s;
         }
         .module-row:last-child { border-bottom: 1px solid var(--border); }
-        .module-row:hover { background: var(--accent-light); margin: 0 -2rem; padding-left: 2rem; padding-right: 2rem; }
+        .module-row:hover { background: var(--accent-light); }
         .module-arrow {
           font-size: .75rem; color: var(--accent);
           opacity: 0; transition: opacity .18s, transform .18s;
@@ -108,7 +108,6 @@ export default function Modules() {
 
         @media (max-width: 768px) {
           .module-row { grid-template-columns: 1fr auto; gap: 0.6rem; padding: 2rem 0; }
-          .module-row:hover { margin: 0 -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; }
           .module-id { display: none; }
           .module-meta-col { display: none; }
           .module-arrow { opacity: 1; }
@@ -120,6 +119,7 @@ export default function Modules() {
           backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
           display: flex; align-items: flex-end;
           opacity: 0; transition: opacity .28s; pointer-events: none;
+          box-sizing: border-box;
         }
         .modal-overlay.open { opacity: 1; pointer-events: auto; }
         @media (min-width: 769px) { .modal-overlay { align-items: center; justify-content: center; } }
@@ -128,10 +128,13 @@ export default function Modules() {
           background: var(--surface);
           border-top: 1px solid var(--border);
           border-radius: 24px 24px 0 0;
-          width: 100%; max-height: 92dvh; overflow-y: auto;
+          width: 100%;
+          max-width: 100vw;
+          max-height: 92dvh; overflow-y: auto;
           padding: 0 1.5rem 3rem;
           transform: translateY(40px);
           transition: transform .3s cubic-bezier(.16,1,.3,1);
+          box-sizing: border-box;
         }
         .modal-overlay.open .modal-panel { transform: translateY(0); }
         @media (min-width: 769px) {

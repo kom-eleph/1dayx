@@ -2,7 +2,7 @@ export default function Nav() {
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-      padding: '1.6rem 3.5rem', display: 'flex', alignItems: 'center',
+      padding: '1.4rem 2rem', display: 'flex', alignItems: 'center',
       background: 'rgba(247,246,242,0.93)', backdropFilter: 'blur(8px)',
       borderBottom: '1px solid var(--border)'
     }}>

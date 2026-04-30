@@ -18,6 +18,12 @@
   --inner-width: 1000px;
 }
 
+/* 横スクロール封印 */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 html { scroll-behavior: smooth; }
 
 body {
@@ -25,7 +31,6 @@ body {
   color: var(--text);
   font-family: var(--font-noto), serif;
   font-weight: 300;
-  overflow-x: hidden;
 }
 
 .inner {
