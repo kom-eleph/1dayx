@@ -207,9 +207,17 @@ export default function Modules() {
         .faq-a { font-size: .82rem; line-height: 1.9; color: var(--muted); font-weight: 300; padding-left: 1.2rem; }
         .modal-cta {
           display: block; width: 100%; background: #06C755; color: #fff;
-          font-family: var(--font-space-mono); font-size: .75rem; letter-spacing: .15em;
-          text-transform: uppercase; padding: 1rem; border-radius: 6px;
-          text-align: center; text-decoration: none; transition: opacity .18s; margin-top: 2rem;
+          font-family: var(--font-space-mono);
+          font-size: clamp(.65rem, 2.5vw, .75rem);
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          padding: .9rem 1rem; border-radius: 6px;
+          text-align: center; text-decoration: none;
+          transition: opacity .18s; margin-top: 2rem;
+          box-sizing: border-box;
+          word-break: keep-all;
+          white-space: normal;
+          line-height: 1.6;
         }
         .modal-cta:hover { opacity: .85; }
       `}</style>
