@@ -1,49 +1,72 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Noto_Serif_JP, Space_Mono } from "next/font/google";
-import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
-});
+// ─── サイトの基本情報 ───────────────────────────────────────
+const SITE_URL = "https://1dayx.jp"; // 本番URLに合わせて変更
+const SITE_NAME = "1 day X";
+const SITE_DESCRIPTION =
+  "人と、その周縁を再設計する。いつもと同じ一日を、少しだけ違う角度で終わらせる。";
 
-const notoSerifJP = Noto_Serif_JP({
-  subsets: ["latin"],
-  weight: ["200", "300", "400"],
-  variable: "--font-noto",
-});
-
-const spaceMono = Space_Mono({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-space-mono",
-});
-
+// ─── Metadata（favicon・OGP・Twitter Card）──────────────────
 export const metadata: Metadata = {
-  title: "1 day X — 偶然の交差が、そっと起きるような余白。",
-  description: "目的も、評価もない。何者でもないまま、ただそこにいられる場所。desk · bar · topic — Tokyo",
+  // ── 基本 ──
+  title: {
+    default: "1 day X",
+    template: "%s | 1 day X",
+  },
+  description: SITE_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+
+  // ── favicon ──
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: '32x32' },
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: { url: '/apple-icon.png', sizes: '180x180' },
+    apple: [
+      { url: "/favicon-180.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
   },
+
+  // ── OGP（Open Graph）──
   openGraph: {
     type: "website",
-    title: "1 day X",
-    description: "目的も、評価もない。何者でもないまま、ただそこにいられる場所。desk · bar · topic — Tokyo",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: "1 day X — 人と、その周縁を再設計する。",
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/ogp_image.png",
+        width: 1200,
+        height: 630,
+        alt: "1 day X — いつもと同じ一日を、少しだけ違う角度で終わらせる。",
+      },
+    ],
     locale: "ja_JP",
   },
+
+  // ── Twitter Card ──
   twitter: {
-    card: "summary",
-    title: "1 day X",
-    description: "目的も、評価もない。何者でもないまま、ただそこにいられる場所。desk · bar · topic — Tokyo",
+    card: "summary_large_image",
+    title: "1 day X — 人と、その周縁を再設計する。",
+    description: SITE_DESCRIPTION,
+    images: ["/ogp_image.png"],
+  },
+
+  // ── その他 ──
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: SITE_URL,
   },
 };
 
+// ─── Layout Component ────────────────────────────────────────
 export default function RootLayout({
   children,
 }: {
@@ -51,9 +74,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={`${cormorant.variable} ${notoSerifJP.variable} ${spaceMono.variable}`}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

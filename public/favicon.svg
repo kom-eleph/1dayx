@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="1 day X favicon">
+  <title>1 day X favicon</title>
+  <circle cx="256" cy="256" r="256" fill="#00A3AF"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="56" stroke-linecap="round">
+    <line x1="147" y1="151" x2="361" y2="365"/>
+    <line x1="365" y1="150" x2="151" y2="364"/>
+  </g>
+  <circle cx="256" cy="256" r="43" fill="#D9F4F7"/>
+</svg>
