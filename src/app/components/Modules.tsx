@@ -129,7 +129,7 @@ export default function Modules() {
           border-top: 1px solid var(--border);
           border-radius: 24px 24px 0 0;
           width: 100%; max-height: 92dvh; overflow-y: auto;
-          padding: 2rem 1.5rem 3rem;
+          padding: 0 1.5rem 3rem;
           transform: translateY(40px);
           transition: transform .3s cubic-bezier(.16,1,.3,1);
         }
@@ -138,32 +138,42 @@ export default function Modules() {
           .modal-panel {
             max-width: 600px; width: 100%;
             border-radius: 20px; border: 1px solid var(--border);
-            padding: 2.5rem 3rem 3rem; max-height: 88vh;
+            padding: 0 3rem 3rem; max-height: 88vh;
             transform: translateY(16px) scale(.98);
           }
           .modal-overlay.open .modal-panel { transform: translateY(0) scale(1); }
         }
 
+        .modal-header {
+          position: sticky; top: 0; z-index: 10;
+          background: var(--surface);
+          padding: 1rem 0 .8rem;
+          margin-bottom: 1.2rem;
+          border-bottom: 1px solid var(--border);
+          display: flex; align-items: center; justify-content: space-between;
+        }
         .modal-grip {
           width: 36px; height: 4px; background: var(--border-mid);
-          border-radius: 99px; margin: 0 auto 1.8rem;
+          border-radius: 99px;
         }
         @media (min-width: 769px) { .modal-grip { display: none; } }
-
         .modal-close {
-          display: none;
+          display: flex; align-items: center; gap: .5rem;
+          background: none; border: none; cursor: pointer;
+          font-family: var(--font-space-mono); font-size: .65rem;
+          letter-spacing: .18em; color: var(--dim); text-transform: uppercase;
+          transition: color .15s; padding: .2rem 0;
+          margin-left: auto;
         }
-        @media (min-width: 769px) {
-          .modal-close {
-            display: flex; align-items: center; justify-content: flex-end;
-            width: 100%; margin-bottom: 1.2rem;
-            background: none; border: none; cursor: pointer;
-            font-family: var(--font-space-mono); font-size: .65rem;
-            letter-spacing: .18em; color: var(--dim); text-transform: uppercase;
-            gap: .4rem; transition: color .15s;
-          }
-          .modal-close:hover { color: var(--accent); }
+        .modal-close:hover { color: var(--accent); }
+        .modal-close-x {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 28px; height: 28px; border-radius: 50%;
+          background: var(--accent-light); color: var(--accent);
+          font-size: 1.1rem; line-height: 1;
+          transition: background .15s;
         }
+        .modal-close:hover .modal-close-x { background: var(--accent); color: #fff; }
 
         .modal-cross { font-family: var(--font-space-mono); font-size: .6rem; letter-spacing: .18em; color: var(--dim); text-transform: uppercase; margin-bottom: .6rem; }
         .modal-title { font-family: var(--font-cormorant); font-size: clamp(2rem,5vw,2.8rem); font-weight: 300; font-style: italic; color: var(--accent); line-height: 1.1; margin-bottom: 1.2rem; }
@@ -239,10 +249,13 @@ export default function Modules() {
         aria-label={active?.label ?? ''}
       >
         <div className="modal-panel">
-          <div className="modal-grip" />
-          <button className="modal-close" onClick={() => setActive(null)}>
-            <span>close</span><span style={{ fontSize: '1rem', lineHeight: 1 }}>×</span>
-          </button>
+          <div className="modal-header">
+            <div className="modal-grip" />
+            <button className="modal-close" onClick={() => setActive(null)}>
+              <span>閉じる</span>
+              <span className="modal-close-x">×</span>
+            </button>
+          </div>
 
           {active && (
             <>
