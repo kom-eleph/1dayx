@@ -69,12 +69,14 @@
   <script>
     const API_BASE_URL = 'https://reservation.1dayx.jp';
 
-    async function fetchJson(path) {
+    async function fetchJson(path, options = {}) {
       const adminKey = document.getElementById('admin-key').value.trim();
 
       const res = await fetch(API_BASE_URL + path, {
+        ...options,
         headers: {
           'x-admin-api-key': adminKey,
+          ...(options.headers || {}),
         },
       });
       const data = await res.json();
@@ -116,10 +118,28 @@
             <div><strong>${escHtml(inq.name || '未入力')}</strong></div>
             <div class="meta">${escHtml(inq.lineUserId || '')}</div>
             <div class="message">${escHtml(inq.message)}</div>
+            ${inq.status === 'open' ? `
+              <button style="margin-top:12px;" onclick="closeInquiry(${Number(inq.id)})">
+                対応済みにする
+              </button>
+            ` : ''}
           </div>
         `).join('');
       } catch (e) {
         root.textContent = '読み込みに失敗しました: ' + e.message;
+      }
+    }
+
+    async function closeInquiry(id) {
+      if (!confirm(`#${id} を対応済みにしますか？`)) return;
+
+      try {
+        await fetchJson(`/api/admin/inquiries/${encodeURIComponent(id)}/close`, {
+          method: 'POST',
+        });
+        await loadInquiries();
+      } catch (e) {
+        alert('更新に失敗しました: ' + e.message);
       }
     }
 
