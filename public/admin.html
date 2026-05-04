@@ -62,8 +62,18 @@
 
     <br>
 
-    <button onclick="loadInquiries()">再読み込み</button>
+  <button onclick="loadInquiries()">問い合わせを再読み込み</button>
+  <button onclick="loadReservations()" style="margin-left:8px;">予約を再読み込み</button>
+
+  <section style="margin-top:24px;">
+    <h2>問い合わせ一覧</h2>
     <div id="inquiries" style="margin-top:16px;">管理キーを入力して再読み込みしてください。</div>
+  </section>
+
+  <section style="margin-top:32px;">
+    <h2>予約一覧</h2>
+    <div id="reservations" style="margin-top:16px;">管理キーを入力して再読み込みしてください。</div>
+  </section>
   </main>
 
   <script>
@@ -123,6 +133,41 @@
                 対応済みにする
               </button>
             ` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        root.textContent = '読み込みに失敗しました: ' + e.message;
+      }
+    }
+
+    async function loadReservations() {
+      const root = document.getElementById('reservations');
+      root.textContent = '読み込み中...';
+
+      try {
+        const data = await fetchJson('/api/admin/reservations');
+        const reservations = data.reservations || [];
+
+        if (!reservations.length) {
+          root.textContent = '予約はありません。';
+          return;
+        }
+
+        root.innerHTML = reservations.map((r) => `
+          <div class="card">
+            <div class="meta">
+              ${escHtml(r.reservationId)} / ${escHtml(r.status)} / ${escHtml(r.reservedAt)}
+            </div>
+            <div><strong>${escHtml(r.eventName)}</strong></div>
+            <div class="meta">
+              ${escHtml(r.datetime)} / ${escHtml(r.location)}
+            </div>
+            <div>
+              ${escHtml(r.name || '未入力')}
+            </div>
+            <div class="meta">
+              ${escHtml(r.lineUserId || '')}
+            </div>
           </div>
         `).join('');
       } catch (e) {
