@@ -168,6 +168,12 @@
             <div class="meta">
               ${escHtml(r.lineUserId || '')}
             </div>
+
+            ${r.status === 'active' ? `
+              <button style="margin-top:12px;background:#dc2626;" onclick="cancelReservation('${r.reservationId}')">
+                キャンセルする
+              </button>
+            ` : ''}
           </div>
         `).join('');
       } catch (e) {
@@ -185,6 +191,19 @@
         await loadInquiries();
       } catch (e) {
         alert('更新に失敗しました: ' + e.message);
+      }
+    }
+
+    async function cancelReservation(id) {
+      if (!confirm(`予約 ${id} をキャンセルしますか？`)) return;
+
+      try {
+        await fetchJson(`/api/admin/reservations/${encodeURIComponent(id)}/cancel`, {
+          method: 'POST',
+        });
+        await loadReservations();
+      } catch (e) {
+        alert('キャンセルに失敗しました: ' + e.message);
       }
     }
 
