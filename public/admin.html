@@ -74,6 +74,42 @@
     <h2>予約一覧</h2>
     <div id="reservations" style="margin-top:16px;">管理キーを入力して再読み込みしてください。</div>
   </section>
+  <section style="margin-top:32px;">
+    <h2>日程追加</h2>
+
+    <div class="card">
+      <div style="display:grid;gap:10px;">
+        <input id="sched-id" placeholder="日程ID 例: SCH-016" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+
+        <select id="sched-event-id" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+          <option value="EVT-A">1 day bar</option>
+          <option value="EVT-B">1 day desk</option>
+          <option value="EVT-C">1 day topic</option>
+        </select>
+
+        <label>
+          開催日時
+          <input id="sched-starts-at" type="datetime-local" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+        </label>
+
+        <label>
+          受付開始日時
+          <input id="sched-accept-start-at" type="datetime-local" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+        </label>
+
+        <label>
+          受付終了日時
+          <input id="sched-accept-end-at" type="datetime-local" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+        </label>
+
+        <input id="sched-capacity" type="number" placeholder="定員上書き（空ならイベント既定値）" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+        <input id="sched-location" placeholder="場所" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+        <textarea id="sched-note" placeholder="備考" style="height:80px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;"></textarea>
+
+        <button onclick="createSchedule()">日程を追加する</button>
+      </div>
+    </div>
+  </section>
   </main>
 
   <script>
@@ -206,7 +242,50 @@
         alert('キャンセルに失敗しました: ' + e.message);
       }
     }
+    function toIsoStringFromLocalInput(value) {
+      if (!value) return null;
+      return new Date(value).toISOString();
+    }
 
+    async function createSchedule() {
+      const payload = {
+        id: document.getElementById('sched-id').value.trim(),
+        eventId: document.getElementById('sched-event-id').value,
+        startsAt: toIsoStringFromLocalInput(document.getElementById('sched-starts-at').value),
+        acceptStartAt: toIsoStringFromLocalInput(document.getElementById('sched-accept-start-at').value),
+        acceptEndAt: toIsoStringFromLocalInput(document.getElementById('sched-accept-end-at').value),
+        capacityOverride: document.getElementById('sched-capacity').value,
+        location: document.getElementById('sched-location').value.trim(),
+        note: document.getElementById('sched-note').value.trim(),
+      };
+
+      if (!payload.id || !payload.eventId || !payload.startsAt) {
+        alert('日程ID、イベント、開催日時は必須です');
+        return;
+      }
+
+      try {
+        await fetchJson('/api/admin/schedules', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        alert('日程を追加しました');
+
+        document.getElementById('sched-id').value = '';
+        document.getElementById('sched-starts-at').value = '';
+        document.getElementById('sched-accept-start-at').value = '';
+        document.getElementById('sched-accept-end-at').value = '';
+        document.getElementById('sched-capacity').value = '';
+        document.getElementById('sched-location').value = '';
+        document.getElementById('sched-note').value = '';
+      } catch (e) {
+        alert('日程追加に失敗しました: ' + e.message);
+      }
+    }
   </script>
 </body>
 </html>
