@@ -135,6 +135,12 @@
         <option value="EVT-B">1 day desk</option>
         <option value="EVT-C">1 day topic</option>
       </select>
+      <label>期間</label>
+      <select id="f-sched-period" onchange="renderSchedules()">
+        <option value="future" selected>今後のみ</option>
+        <option value="">すべて</option>
+        <option value="past">過去のみ</option>
+      </select>
       <label>表示</label>
       <select id="f-sched-hidden" onchange="renderSchedules()">
         <option value="visible">公開中のみ</option>
@@ -391,11 +397,18 @@ async function fetchSchedules(){
 function renderSchedules(){
   const evtF=document.getElementById('f-sched-event').value;
   const hidF=document.getElementById('f-sched-hidden').value;
+  const periodF=document.getElementById('f-sched-period').value;
+  const now=new Date();
   const list=schedulesData.filter(s=>{
     if(evtF&&s.eventId!==evtF)return false;
     const hidden=s.isHidden||(s.note&&s.note.startsWith('[非公開]'));
     if(hidF==='visible'&&hidden)return false;
     if(hidF==='hidden'&&!hidden)return false;
+    if(s.startsAt){
+      const past=new Date(s.startsAt)<now;
+      if(periodF==='future'&&past)return false;
+      if(periodF==='past'&&!past)return false;
+    }
     return true;
   });
   if(!list.length){setEmpty('list-schedules','該当する日程がありません');return;}
