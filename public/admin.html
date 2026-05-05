@@ -79,7 +79,6 @@
 
     <div class="card">
       <div style="display:grid;gap:10px;">
-        <input id="sched-id" placeholder="日程ID 例: SCH-016" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
 
         <select id="sched-event-id" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
           <option value="EVT-A">1 day bar</option>
@@ -249,7 +248,6 @@
 
     async function createSchedule() {
       const payload = {
-        id: document.getElementById('sched-id').value.trim(),
         eventId: document.getElementById('sched-event-id').value,
         startsAt: toIsoStringFromLocalInput(document.getElementById('sched-starts-at').value),
         acceptStartAt: toIsoStringFromLocalInput(document.getElementById('sched-accept-start-at').value),
@@ -259,8 +257,8 @@
         note: document.getElementById('sched-note').value.trim(),
       };
 
-      if (!payload.id || !payload.eventId || !payload.startsAt) {
-        alert('日程ID、イベント、開催日時は必須です');
+      if (!payload.eventId || !payload.startsAt) {
+        alert('イベント、開催日時は必須です');
         return;
       }
 
@@ -275,7 +273,6 @@
 
         alert('日程を追加しました');
 
-        document.getElementById('sched-id').value = '';
         document.getElementById('sched-starts-at').value = '';
         document.getElementById('sched-accept-start-at').value = '';
         document.getElementById('sched-accept-end-at').value = '';
