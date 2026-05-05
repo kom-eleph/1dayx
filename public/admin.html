@@ -62,8 +62,9 @@
 
     <br>
 
-  <button onclick="loadInquiries()">問い合わせを再読み込み</button>
-  <button onclick="loadReservations()" style="margin-left:8px;">予約を再読み込み</button>
+<button onclick="loadInquiries()">問い合わせを再読み込み</button>
+<button onclick="loadReservations()" style="margin-left:8px;">予約を再読み込み</button>
+<button onclick="loadSchedules()" style="margin-left:8px;">日程を再読み込み</button>
 
   <section style="margin-top:24px;">
     <h2>問い合わせ一覧</h2>
@@ -75,6 +76,12 @@
     <div id="reservations" style="margin-top:16px;">管理キーを入力して再読み込みしてください。</div>
   </section>
   <section style="margin-top:32px;">
+
+  <section style="margin-top:32px;">
+    <h2>日程一覧</h2>
+    <div id="schedules" style="margin-top:16px;">管理キーを入力して再読み込みしてください。</div>
+  </section>
+
     <h2>日程追加</h2>
 
     <div class="card">
@@ -209,6 +216,41 @@
                 キャンセルする
               </button>
             ` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        root.textContent = '読み込みに失敗しました: ' + e.message;
+      }
+    }
+
+    async function loadSchedules() {
+      const root = document.getElementById('schedules');
+      root.textContent = '読み込み中...';
+
+      try {
+        const data = await fetchJson('/api/admin/schedules');
+        const schedules = data.schedules || [];
+
+        if (!schedules.length) {
+          root.textContent = '日程はありません。';
+          return;
+        }
+
+        root.innerHTML = schedules.map((s) => `
+          <div class="card">
+            <div class="meta">
+              ${escHtml(s.id)} / ${escHtml(s.eventName)}
+            </div>
+            <div><strong>${escHtml(s.datetime)}</strong></div>
+            <div class="meta">
+              📍 ${escHtml(s.location || '')}
+            </div>
+            <div>
+              予約 ${escHtml(s.reservedCount)} / 定員 ${escHtml(s.capacity)}
+              ・残席 ${escHtml(s.remainingCount)}
+              ・待機 ${escHtml(s.waitlistCount)}
+            </div>
+            ${s.note ? `<div class="meta">${escHtml(s.note)}</div>` : ''}
           </div>
         `).join('');
       } catch (e) {
