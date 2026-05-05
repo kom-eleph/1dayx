@@ -1,0 +1,58 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      - ./nginx/conf.d/.htpasswd:/etc/nginx/.htpasswd:ro
+    depends_on:
+      - site
+    restart: always
+
+  site:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./site:/app
+    command: sh -c "npm install && npm run build && npm start"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    expose:
+      - "3000"
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
+  reservation-api:
+    build:
+      context: ../community-reservation/server
+      dockerfile: Dockerfile
+    env_file:
+      - ../community-reservation/server/.env
+    depends_on:
+      - reservation-db
+    expose:
+      - "3000"
+    restart: always
+
+  reservation-db:
+    image: postgres:16
+    env_file:
+      - ../community-reservation/server/.env.db
+    volumes:
+      - reservation_postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:
+  reservation_postgres_data:
