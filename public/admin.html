@@ -489,6 +489,7 @@ function renderReservations(){
       ${r.location?`<div class="card-meta">&#128205; ${esc(r.location)}</div>`:''}
       <div class="card-meta">LINE: ${esc(r.lineUserId)}</div>
       <div class="card-meta">予約日時: ${fmtDate(r.reservedAt)}</div>
+      ${r.consentedAt?`<div class="card-meta" style="color:#059669;">✔ 規約同意: ${fmtDate(r.consentedAt)}</div>`:'<div class="card-meta" style="color:#9ca3af;">規約同意: 未記録</div>'}
       ${(r.hasAllergy!==null&&r.hasAllergy!==undefined)||r.carbonatedNg||r.allergyNote?`<div class="card-meta" style="margin-top:6px;padding:6px 8px;background:#fef9ec;border-radius:6px;line-height:1.8;">${r.hasAllergy===true?'🌿 アレルギー: <strong>あり</strong>':r.hasAllergy===false?'🌿 アレルギー: なし':''} ${r.carbonatedNg===true?'&nbsp;&#183;&nbsp; 炭酸: <strong>NG</strong>':r.carbonatedNg===false?'&nbsp;&#183;&nbsp; 炭酸: 大丈夫':''} ${r.allergyNote?`<br>📝 ${esc(r.allergyNote)}`:''}`.trim()+'</div>':''}
       ${r.status==='active'?`<div class="btn-row">
         <button class="btn btn-danger" onclick="openCancelModal('${esc(r.reservationId)}','${esc(r.name)}','${esc(r.eventName)}')">&#10005; キャンセルする</button>
@@ -506,8 +507,8 @@ function exportCsv(){
     return true;
   });
   if(!list.length){showToast('エクスポートするデータがありません','error');return;}
-  const header=['予約ID','ステータス','名前','イベント','開催日時','場所','LINE ID','予約日時','キャンセル日時','アレルギー','炭酸NG','苦手なもの・アレルギー詳細'];
-  const rows=list.map(r=>[r.reservationId,r.status,r.name,r.eventName,r.datetime,r.location,r.lineUserId,fmtDate(r.reservedAt),fmtDate(r.cancelledAt),r.hasAllergy===true?'あり':r.hasAllergy===false?'なし':'',r.carbonatedNg===true?'NG':r.carbonatedNg===false?'大丈夫':'',r.allergyNote||'']);
+  const header=['予約ID','ステータス','名前','イベント','開催日時','場所','LINE ID','予約日時','キャンセル日時','アレルギー','炭酸NG','苦手なもの・アレルギー詳細','規約同意日時'];
+  const rows=list.map(r=>[r.reservationId,r.status,r.name,r.eventName,r.datetime,r.location,r.lineUserId,fmtDate(r.reservedAt),fmtDate(r.cancelledAt),r.hasAllergy===true?'あり':r.hasAllergy===false?'なし':'',r.carbonatedNg===true?'NG':r.carbonatedNg===false?'大丈夫':'',r.allergyNote||'',fmtDate(r.consentedAt)]);
   const csv=[header,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
