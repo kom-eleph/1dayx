@@ -652,11 +652,9 @@ function fmtDate(v){
 }
 function fmtDateOnly(v){
   if(!v)return'—';
-  const d=new Date(v);
-  const y=d.getUTCFullYear();
-  const m=String(d.getUTCMonth()+1).padStart(2,'0');
-  const day=String(d.getUTCDate()).padStart(2,'0');
-  return y+'/'+m+'/'+day;
+  const s=String(v).slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  return s.replace(/-/g,'/');
 }
 function genderLabel(g){return{male:'男性',female:'女性',other:'その他',prefer_not_to_say:'回答しない'}[g]||g;}
 function statusLabel(s){return{active:'有効',cancelled:'キャンセル済',modified:'変更済'}[s]||s;}
