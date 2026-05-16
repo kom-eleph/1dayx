@@ -54,6 +54,13 @@
     .badge-active{background:var(--success-light);color:#166534}
     .badge-cancelled{background:var(--danger-light);color:#991b1b}
     .badge-hidden{background:#f1f5f9;color:var(--muted)}
+    .dl-row{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6}
+    .dl-val{color:var(--text);font-weight:500}
+    .dl-none{color:var(--dim)}
+    .dl-badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px;vertical-align:middle}
+    .dl-open{background:var(--success-light);color:#166534}
+    .dl-past{background:#f1f5f9;color:var(--muted)}
+    .dl-before{background:var(--warning-light);color:#92400e}
     .btn{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text);transition:background .15s,border-color .15s}
     .btn:hover{background:var(--bg);border-color:var(--border-mid)}
     .btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
@@ -428,6 +435,21 @@ function renderSchedules(){
         <div class="sched-stat">待機 <strong>${esc(s.waitlistCount)}</strong></div>
       </div>
       ${note?`<div class="card-meta" style="margin-top:4px;">&#128172; ${esc(note)}</div>`:''}
+      ${(()=>{
+        const now=new Date();
+        const end=s.acceptEndAt?new Date(s.acceptEndAt):null;
+        const start=s.acceptStartAt?new Date(s.acceptStartAt):null;
+        if(!end&&!start) return '<div class="dl-row">&#128338; 締め切り: <span class="dl-none">未設定</span></div>';
+        let badge='';
+        if(end){
+          if(now>end) badge='<span class="dl-badge dl-past">締め切り済み</span>';
+          else if(!start||now>=start) badge='<span class="dl-badge dl-open">受付中</span>';
+          else badge='<span class="dl-badge dl-before">受付前</span>';
+        }
+        const es=start?fmtDate(start.toISOString()):'—';
+        const ee=end?fmtDate(end.toISOString()):'—';
+        return `<div class="dl-row">&#128338; 受付 <span class="dl-val">${esc(es)}</span> → 締め切り <span class="dl-val">${esc(ee)}</span>${badge}</div>`;
+      })()}
       ${!hidden?`<div class="btn-row">
         <button class="btn" onclick='openEditModal(${JSON.stringify(s)})'>&#9998; 編集</button>
         <button class="btn btn-warning" onclick="openHideModal('${esc(s.id)}')">&#128274; 非公開にする</button>
