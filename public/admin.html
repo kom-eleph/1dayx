@@ -359,12 +359,17 @@
         <textarea id="sv-q-body" placeholder="例：今夜、名前を知らなかった誰かと、何かが交わりましたか。"></textarea>
       </div>
       <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
+          <input type="checkbox" id="sv-q-free-only" style="width:16px;height:16px" onchange="svToggleFreeOnly()"> 自由記述のみ（選択肢なし）
+        </label>
+      </div>
+      <div class="form-group" id="sv-q-options-wrap">
         <label>選択肢（改行区切り、2〜4個）</label>
         <textarea id="sv-q-options" placeholder="交わった&#10;交わらなかった&#10;わからない" style="min-height:90px"></textarea>
       </div>
       <div class="form-group">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
-          <input type="checkbox" id="sv-q-has-free" checked style="width:16px;height:16px"> 自由記述を受け付ける
+          <input type="checkbox" id="sv-q-has-free" checked style="width:16px;height:16px"> 選択肢回答後に自由記述を受け付ける
         </label>
       </div>
     </div>
@@ -591,6 +596,7 @@ function renderReservations(){
   const stsF=document.getElementById('f-rsv-status').value;
   const dateF=document.getElementById('f-rsv-date').value;
   const list=reservationsData.filter(r=>{
+    if(r.status==='modified')return false;
     if(evtF&&r.eventId!==evtF)return false;
     if(stsF&&r.status!==stsF)return false;
     if(dateF&&r.startsAt){if(new Date(r.startsAt).toISOString().slice(0,10)!==dateF)return false;}
@@ -622,6 +628,7 @@ function exportCsv(){
   const stsF=document.getElementById('f-rsv-status').value;
   const dateF=document.getElementById('f-rsv-date').value;
   const list=reservationsData.filter(r=>{
+    if(r.status==='modified')return false;
     if(evtF&&r.eventId!==evtF)return false;
     if(stsF&&r.status!==stsF)return false;
     if(dateF&&r.startsAt){if(new Date(r.startsAt).toISOString().slice(0,10)!==dateF)return false;}
@@ -813,7 +820,7 @@ async function svLoadParticipants(){
   wrap.innerHTML='<span style="font-size:13px;color:var(--dim)">読み込み中...</span>';
   try{
     const data=await apiFetch('/api/admin/reservations');
-    svParticipants=(data.reservations||[]).filter(r=>r.scheduleId===scheduleId&&r.status!=='cancelled');
+    svParticipants=(data.reservations||[]).filter(r=>r.scheduleId===scheduleId&&(r.status==='active'||r.status==='modified'));
     if(!svParticipants.length){wrap.innerHTML='<span style="font-size:13px;color:var(--dim)">参加者がいません</span>';svUpdateSendInfo();return;}
     wrap.innerHTML=svParticipants.map(p=>`
       <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
@@ -887,12 +894,22 @@ async function svLoadQuestions(){
 
 function svParseOptions(str){try{return JSON.parse(str);}catch{return[str];}}
 
+function svToggleFreeOnly(){
+  const isFreeOnly=document.getElementById('sv-q-free-only').checked;
+  document.getElementById('sv-q-options-wrap').style.display=isFreeOnly?'none':'';
+  document.getElementById('sv-q-has-free').checked=isFreeOnly?true:document.getElementById('sv-q-has-free').checked;
+}
+
 function svOpenQuestionModal(q=null){
   document.getElementById('sv-modal-title').textContent=q?'質問を編集':'質問を追加';
   document.getElementById('sv-q-editing-id').value=q?q.id:'';
   document.getElementById('sv-q-module').value=q?q.module:'bar';
   document.getElementById('sv-q-body').value=q?q.body:'';
-  document.getElementById('sv-q-options').value=q?svParseOptions(q.options).join('\n'):'';
+  const opts=q?svParseOptions(q.options):[];
+  const isFreeOnly=q?(opts.length===0):false;
+  document.getElementById('sv-q-free-only').checked=isFreeOnly;
+  document.getElementById('sv-q-options-wrap').style.display=isFreeOnly?'none':'';
+  document.getElementById('sv-q-options').value=isFreeOnly?'':opts.join('\n');
   document.getElementById('sv-q-has-free').checked=q?q.hasFree:true;
   document.getElementById('sv-modal-question').classList.add('open');
 }
@@ -922,12 +939,18 @@ async function svSaveQuestion(){
   const id=document.getElementById('sv-q-editing-id').value;
   const module=document.getElementById('sv-q-module').value;
   const body=document.getElementById('sv-q-body').value.trim();
-  const optLines=document.getElementById('sv-q-options').value.trim().split('\n').map(s=>s.trim()).filter(Boolean);
-  const hasFree=document.getElementById('sv-q-has-free').checked;
+  const isFreeOnly=document.getElementById('sv-q-free-only').checked;
+  const hasFree=isFreeOnly?true:document.getElementById('sv-q-has-free').checked;
   if(!body)return showToast('質問文を入力してください','error');
-  if(optLines.length<2)return showToast('選択肢は2つ以上必要です','error');
-  if(optLines.length>4)return showToast('選択肢は4つまでです','error');
-  const options=JSON.stringify(optLines);
+  let options;
+  if(isFreeOnly){
+    options=JSON.stringify([]);
+  }else{
+    const optLines=document.getElementById('sv-q-options').value.trim().split('\n').map(s=>s.trim()).filter(Boolean);
+    if(optLines.length<2)return showToast('選択肢は2つ以上必要です','error');
+    if(optLines.length>4)return showToast('選択肢は4つまでです','error');
+    options=JSON.stringify(optLines);
+  }
   try{
     if(id){
       await apiFetch('/api/admin/survey/questions/'+id,{method:'PATCH',body:JSON.stringify({module,body,options,hasFree})});
