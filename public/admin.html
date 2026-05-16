@@ -118,6 +118,7 @@
   <button class="tab-btn" data-tab="reservations" onclick="switchTab('reservations')">予約一覧</button>
   <button class="tab-btn" data-tab="waitlists" onclick="switchTab('waitlists')">キャンセル待ち</button>
   <button class="tab-btn" data-tab="users" onclick="switchTab('users')">ユーザー一覧</button>
+  <button class="tab-btn" data-tab="survey" onclick="switchTab('survey')">アンケート</button>
 </div>
 <main>
   <!-- ① 問い合わせ -->
@@ -227,6 +228,66 @@
     </div>
     <div id="list-users" class="card-list"><div class="state-box"><p>管理キーを入力して読み込んでください</p></div></div>
   </div>
+  <!-- ⑦ アンケート -->
+  <div class="tab-pane" id="pane-survey">
+    <div style="display:grid;gap:16px">
+
+      <!-- 送信セクション -->
+      <div class="form-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:14px">アンケート送信</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="form-group">
+            <label>スケジュール</label>
+            <select id="sv-schedule" onchange="svLoadParticipants()">
+              <option value="">選択してください</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>イベント種別（質問カテゴリ）</label>
+            <select id="sv-module">
+              <option value="bar">bar</option>
+              <option value="desk">desk</option>
+              <option value="topic">topic</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px">送信先参加者</div>
+        <div id="sv-participant-list" style="border:1px solid var(--border);border-radius:8px;padding:10px;min-height:60px;background:var(--bg)">
+          <span style="font-size:13px;color:var(--dim)">スケジュールを選択してください</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <span id="sv-send-info" style="font-size:12px;color:var(--muted);flex:1">0名選択中</span>
+          <button class="btn" onclick="svSelectAll()">全選択</button>
+          <button class="btn btn-action" id="sv-send-btn" onclick="svSend()" disabled>アンケートを送信</button>
+        </div>
+      </div>
+
+      <!-- 質問管理セクション -->
+      <div class="form-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-size:14px;font-weight:600">質問管理</div>
+          <button class="btn btn-action" onclick="svOpenQuestionModal()">＋ 質問を追加</button>
+        </div>
+        <div id="sv-question-list" style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <div class="state-box"><p>読み込み中...</p></div>
+        </div>
+      </div>
+
+      <!-- 回答一覧セクション -->
+      <div class="form-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:14px">回答一覧</div>
+        <div class="filter-bar" style="margin-bottom:12px">
+          <label>スケジュール</label>
+          <select id="sv-res-schedule" onchange="svLoadResponses()">
+            <option value="">すべて</option>
+          </select>
+        </div>
+        <div id="sv-response-list" style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <div class="state-box"><p>送信後に回答が表示されます</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
 
 <!-- 編集モーダル -->
@@ -280,11 +341,637 @@
   </div>
 </div>
 
+<!-- アンケート：質問追加・編集モーダル -->
+<div class="modal-overlay" id="sv-modal-question" onclick="svCloseQuestionModal(event)">
+  <div class="modal">
+    <h3 id="sv-modal-title">質問を追加</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>種別</label>
+        <select id="sv-q-module">
+          <option value="bar">bar</option>
+          <option value="desk">desk</option>
+          <option value="topic">topic</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>質問文</label>
+        <textarea id="sv-q-body" placeholder="例：今夜、名前を知らなかった誰かと、何かが交わりましたか。"></textarea>
+      </div>
+      <div class="form-group">
+        <label>選択肢（改行区切り、2〜4個）</label>
+        <textarea id="sv-q-options" placeholder="交わった&#10;交わらなかった&#10;わからない" style="min-height:90px"></textarea>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
+          <input type="checkbox" id="sv-q-has-free" checked style="width:16px;height:16px"> 自由記述を受け付ける
+        </label>
+      </div>
+    </div>
+    <input type="hidden" id="sv-q-editing-id">
+    <div class="modal-foot">
+      <button class="btn" onclick="svCloseQuestionModal()">キャンセル</button>
+      <button class="btn btn-action" onclick="svSaveQuestion()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 const API='https://reservation.1dayx.jp';
 const KEY_STORAGE='admin_key_1dayx';
+
+function getKey(){
+  const v=document.getElementById('admin-key').value.trim();
+  if(v){sessionStorage.setItem(KEY_STORAGE,v);return v;}
+  return sessionStorage.getItem(KEY_STORAGE)||'';
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const s=sessionStorage.getItem(KEY_STORAGE);
+  if(s)document.getElementById('admin-key').value=s;
+  checkApiHealth();
+});
+
+async function checkApiHealth(){
+  try{
+    const r=await fetch(API+'/api/health');
+    const dot=document.getElementById('status-dot');
+    if(r.ok){dot.style.background='var(--success)';dot.title='API 接続OK';}
+    else{dot.style.background='var(--danger)';dot.title='API エラー';}
+  }catch{document.getElementById('status-dot').style.background='var(--danger)';}
+}
+
+async function apiFetch(path,options={}){
+  const key=getKey();
+  const res=await fetch(API+path,{
+    ...options,
+    headers:{
+      'x-admin-api-key':key,
+      ...(options.body?{'Content-Type':'application/json'}:{}),
+      ...(options.headers||{}),
+    },
+  });
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.message||'HTTP '+res.status);
+  return data;
+}
+
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+let toastTimer;
+function showToast(msg,type='success'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show '+type;
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.className='',2800);
+}
+
+function setLoading(id){document.getElementById(id).innerHTML='<div class="state-box"><div class="spinner"></div><p>読み込み中...</p></div>';}
+function setError(id,msg){document.getElementById(id).innerHTML=`<div class="error-box">&#9888; ${esc(msg)}</div>`;}
+function setEmpty(id,msg='データがありません'){document.getElementById(id).innerHTML=`<div class="state-box"><div class="icon">&#128235;</div><p>${esc(msg)}</p></div>`;}
+
+let currentTab='inquiries';
+const loaded={};
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+tab));
+  currentTab=tab;
+  if(!loaded[tab])loadTab(tab);
+}
+
+function loadCurrentTab(){loadTab(currentTab);}
+
+async function loadTab(tab){
+  loaded[tab]=true;
+  if(tab==='inquiries')await fetchInquiries();
+  if(tab==='schedules')await fetchSchedules();
+  if(tab==='reservations')await fetchReservations();
+  if(tab==='waitlists')await fetchWaitlists();
+  if(tab==='users')await fetchUsers();
+  if(tab==='survey')await svInit();
+}
+
+/* ── 問い合わせ ───────────────────────────────────────── */
+let inquiriesData=[];
+async function fetchInquiries(){
+  setLoading('list-inquiries');
+  try{
+    const data=await apiFetch('/api/admin/inquiries');
+    inquiriesData=data.inquiries||[];
+    updateInquiryBadge();renderInquiries();
+  }catch(e){setError('list-inquiries',e.message);}
+}
+function updateInquiryBadge(){
+  const open=inquiriesData.filter(i=>i.status==='open').length;
+  const b=document.getElementById('badge-inquiries');
+  if(open>0){b.textContent=open;b.style.display='';}else{b.style.display='none';}
+}
+function renderInquiries(){
+  const s=document.getElementById('f-inq-status').value;
+  const list=inquiriesData.filter(i=>!s||i.status===s);
+  if(!list.length){setEmpty('list-inquiries','該当する問い合わせがありません');return;}
+  document.getElementById('list-inquiries').innerHTML=list.map(inq=>`
+    <div class="card">
+      <div class="card-header">
+        <div><span class="card-title">${esc(inq.name||'（名前なし）')}</span>
+        <span class="badge badge-${esc(inq.status)}" style="margin-left:8px;">${inq.status==='open'?'未対応':'対応済み'}</span></div>
+        <div class="card-meta">#${esc(inq.id)} &middot; ${fmtDate(inq.receivedAt||inq.createdAt)}</div>
+      </div>
+      <div class="card-meta">${esc(inq.lineUserId||'（LINE ID不明）')}</div>
+      <div class="card-body" style="margin-top:8px;">${esc(inq.message)}</div>
+      ${inq.status==='open'?`<div class="btn-row"><button class="btn btn-action" onclick="closeInquiry(${Number(inq.id)})">&#10003; 対応済みにする</button></div>`:''}
+    </div>`).join('');
+}
+async function closeInquiry(id){
+  try{await apiFetch('/api/admin/inquiries/'+id+'/close',{method:'POST'});showToast('対応済みにしました');await fetchInquiries();}
+  catch(e){showToast(e.message,'error');}
+}
+
+/* ── 日程一覧 ─────────────────────────────────────────── */
+let schedulesData=[];
+async function fetchSchedules(){
+  setLoading('list-schedules');
+  try{
+    const data=await apiFetch('/api/admin/schedules');
+    schedulesData=data.schedules||[];renderSchedules();
+  }catch(e){setError('list-schedules',e.message);}
+}
+function renderSchedules(){
+  const evtF=document.getElementById('f-sched-event').value;
+  const hidF=document.getElementById('f-sched-hidden').value;
+  const periodF=document.getElementById('f-sched-period').value;
+  const now=new Date();
+  const list=schedulesData.filter(s=>{
+    if(evtF&&s.eventId!==evtF)return false;
+    const hidden=s.isHidden||(s.note&&s.note.startsWith('[非公開]'));
+    if(hidF==='visible'&&hidden)return false;
+    if(hidF==='hidden'&&!hidden)return false;
+    if(s.startsAt){
+      const past=new Date(s.startsAt)<now;
+      if(periodF==='future'&&past)return false;
+      if(periodF==='past'&&!past)return false;
+    }
+    return true;
+  });
+  if(!list.length){setEmpty('list-schedules','該当する日程がありません');return;}
+  document.getElementById('list-schedules').innerHTML=list.map(s=>{
+    const hidden=s.isHidden||(s.note&&s.note.startsWith('[非公開]'));
+    const note=hidden?(s.note||'').replace('[非公開]','').trim():s.note;
+    return `<div class="card" style="${hidden?'opacity:.55;':''}">
+      <div class="card-header">
+        <div><span class="card-title">${esc(s.eventName)}</span>${hidden?'<span class="badge badge-hidden" style="margin-left:8px;">非公開</span>':''}</div>
+        <div class="card-meta">${esc(s.id)}</div>
+      </div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:6px;">&#128197; ${esc(s.datetime)}</div>
+      ${s.location?`<div class="card-meta">&#128205; ${esc(s.location)}</div>`:''}
+      <div class="sched-stats">
+        <div class="sched-stat">予約 <strong>${esc(s.reservedCount)}</strong> / 定員 <strong>${esc(s.capacity)}</strong></div>
+        <div class="sched-stat">残席 <strong>${esc(s.remainingCount)}</strong></div>
+        <div class="sched-stat">待機 <strong>${esc(s.waitlistCount)}</strong></div>
+      </div>
+      ${note?`<div class="card-meta" style="margin-top:4px;">&#128172; ${esc(note)}</div>`:''}
+      ${(()=>{
+        const now=new Date();
+        const end=s.acceptEndAt?new Date(s.acceptEndAt):null;
+        const start=s.acceptStartAt?new Date(s.acceptStartAt):null;
+        if(!end&&!start) return '<div class="dl-row">&#128338; 締め切り: <span class="dl-none">未設定</span></div>';
+        let badge='';
+        if(end){
+          if(now>end) badge='<span class="dl-badge dl-past">締め切り済み</span>';
+          else if(!start||now>=start) badge='<span class="dl-badge dl-open">受付中</span>';
+          else badge='<span class="dl-badge dl-before">受付前</span>';
+        }
+        const es=start?fmtDate(start.toISOString()):'—';
+        const ee=end?fmtDate(end.toISOString()):'—';
+        return `<div class="dl-row">&#128338; 受付 <span class="dl-val">${esc(es)}</span> → 締め切り <span class="dl-val">${esc(ee)}</span>${badge}</div>`;
+      })()}
+      ${!hidden?`<div class="btn-row">
+        <button class="btn" onclick='openEditModal(${JSON.stringify(s)})'>&#9998; 編集</button>
+        <button class="btn btn-warning" onclick="openHideModal('${esc(s.id)}')">&#128274; 非公開にする</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+/* ── 日程追加 ─────────────────────────────────────────── */
+function toIso(v){return v?new Date(v).toISOString():null;}
+async function createSchedule(){
+  const payload={
+    eventId:document.getElementById('sched-event-id').value,
+    startsAt:toIso(document.getElementById('sched-starts-at').value),
+    acceptStartAt:toIso(document.getElementById('sched-accept-start-at').value),
+    acceptEndAt:toIso(document.getElementById('sched-accept-end-at').value),
+    capacityOverride:document.getElementById('sched-capacity').value||null,
+    location:document.getElementById('sched-location').value.trim(),
+    note:document.getElementById('sched-note').value.trim(),
+  };
+  if(!payload.startsAt){showToast('開催日時は必須です','error');return;}
+  try{
+    await apiFetch('/api/admin/schedules',{method:'POST',body:JSON.stringify(payload)});
+    showToast('日程を追加しました');
+    ['sched-starts-at','sched-accept-start-at','sched-accept-end-at','sched-capacity','sched-location','sched-note']
+      .forEach(id=>document.getElementById(id).value='');
+    loaded['schedules']=false;switchTab('schedules');
+  }catch(e){showToast(e.message,'error');}
+}
+
+/* ── 予約一覧 ─────────────────────────────────────────── */
+let reservationsData=[];
+async function fetchReservations(){
+  setLoading('list-reservations');
+  try{
+    const data=await apiFetch('/api/admin/reservations');
+    reservationsData=data.reservations||[];renderReservations();
+  }catch(e){setError('list-reservations',e.message);}
+}
+function renderReservations(){
+  const evtF=document.getElementById('f-rsv-event').value;
+  const stsF=document.getElementById('f-rsv-status').value;
+  const dateF=document.getElementById('f-rsv-date').value;
+  const list=reservationsData.filter(r=>{
+    if(evtF&&r.eventId!==evtF)return false;
+    if(stsF&&r.status!==stsF)return false;
+    if(dateF&&r.startsAt){if(new Date(r.startsAt).toISOString().slice(0,10)!==dateF)return false;}
+    return true;
+  });
+  if(!list.length){setEmpty('list-reservations','該当する予約がありません');return;}
+  document.getElementById('list-reservations').innerHTML=list.map(r=>`
+    <div class="card">
+      <div class="card-header">
+        <div><span class="card-title">${esc(r.name||'（名前なし）')}</span>
+        <span class="badge badge-${esc(r.status)}" style="margin-left:8px;">${statusLabel(r.status)}</span></div>
+        <div class="card-meta">${esc(r.reservationId)}</div>
+      </div>
+      <div style="font-size:13px;margin-bottom:4px;"><strong>${esc(r.eventName)}</strong> &middot; ${esc(r.datetime)}</div>
+      ${r.location?`<div class="card-meta">&#128205; ${esc(r.location)}</div>`:''}
+      <div class="card-meta">LINE: ${esc(r.lineUserId)}</div>
+      ${r.birthdate?`<div class="card-meta">生年月日: ${fmtDateOnly(r.birthdate)}</div>`:''}
+      ${r.gender?`<div class="card-meta">性別: ${esc(genderLabel(r.gender))}</div>`:''}
+      <div class="card-meta">予約日時: ${fmtDate(r.reservedAt)}</div>
+      ${r.consentedAt?`<div class="card-meta" style="color:#059669;">✔ 規約同意: ${fmtDate(r.consentedAt)}</div>`:'<div class="card-meta" style="color:#9ca3af;">規約同意: 未記録</div>'}
+      ${(r.hasAllergy!==null&&r.hasAllergy!==undefined)||r.carbonatedNg||r.allergyNote?`<div class="card-meta" style="margin-top:6px;padding:6px 8px;background:#fef9ec;border-radius:6px;line-height:1.8;">${r.hasAllergy===true?'🌿 アレルギー: <strong>あり</strong>':r.hasAllergy===false?'🌿 アレルギー: なし':''} ${r.carbonatedNg===true?'&nbsp;&#183;&nbsp; 炭酸: <strong>NG</strong>':r.carbonatedNg===false?'&nbsp;&#183;&nbsp; 炭酸: 大丈夫':''} ${r.allergyNote?`<br>📝 ${esc(r.allergyNote)}`:''}`.trim()+'</div>':''}
+      ${r.status==='active'?`<div class="btn-row">
+        <button class="btn btn-danger" onclick="openCancelModal('${esc(r.reservationId)}','${esc(r.name)}','${esc(r.eventName)}')">&#10005; キャンセルする</button>
+      </div>`:''}
+    </div>`).join('');
+}
+function exportCsv(){
+  const evtF=document.getElementById('f-rsv-event').value;
+  const stsF=document.getElementById('f-rsv-status').value;
+  const dateF=document.getElementById('f-rsv-date').value;
+  const list=reservationsData.filter(r=>{
+    if(evtF&&r.eventId!==evtF)return false;
+    if(stsF&&r.status!==stsF)return false;
+    if(dateF&&r.startsAt){if(new Date(r.startsAt).toISOString().slice(0,10)!==dateF)return false;}
+    return true;
+  });
+  if(!list.length){showToast('エクスポートするデータがありません','error');return;}
+  const header=['予約ID','ステータス','名前','生年月日','性別','イベント','開催日時','場所','LINE ID','予約日時','キャンセル日時','アレルギー','炭酸NG','苦手なもの・アレルギー詳細','規約同意日時'];
+  const rows=list.map(r=>[r.reservationId,r.status,r.name,r.birthdate?fmtDateOnly(r.birthdate):'',r.gender?genderLabel(r.gender):'',r.eventName,r.datetime,r.location,r.lineUserId,fmtDate(r.reservedAt),fmtDate(r.cancelledAt),r.hasAllergy===true?'あり':r.hasAllergy===false?'なし':'',r.carbonatedNg===true?'NG':r.carbonatedNg===false?'大丈夫':'',r.allergyNote||'',fmtDate(r.consentedAt)]);
+  const csv=[header,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='reservations_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  URL.revokeObjectURL(url);showToast('CSVをダウンロードしました');
+}
+
+/* ── キャンセル待ち ───────────────────────────────────── */
+let waitlistsData=[];
+async function fetchWaitlists(){
+  setLoading('list-waitlists');
+  try{
+    const data=await apiFetch('/api/admin/waitlists');
+    waitlistsData=data.waitlists||[];renderWaitlists();
+  }catch(e){setError('list-waitlists',e.message);}
+}
+function renderWaitlists(){
+  const evtF=document.getElementById('f-wl-event').value;
+  const stsF=document.getElementById('f-wl-status').value;
+  const list=waitlistsData.filter(w=>{
+    if(evtF&&w.eventId!==evtF)return false;
+    if(stsF&&w.status!==stsF)return false;
+    return true;
+  });
+  if(!list.length){setEmpty('list-waitlists','該当するキャンセル待ちがありません');return;}
+  document.getElementById('list-waitlists').innerHTML=list.map(w=>`
+    <div class="card">
+      <div class="card-header">
+        <div><span class="card-title">${esc(w.name||'（名前なし）')}</span>
+        ${w.notifiedAt?'<span class="badge badge-closed" style="margin-left:8px;">解消通知済み</span>':'<span class="badge badge-open" style="margin-left:8px;">待機中</span>'}
+        </div>
+        <div class="card-meta">#${esc(w.id)}</div>
+      </div>
+      <div style="font-size:13px;margin-bottom:4px;"><strong>${esc(w.eventName)}</strong> &middot; ${esc(w.datetime)}</div>
+      ${w.location?`<div class="card-meta">&#128205; ${esc(w.location)}</div>`:''}
+      <div class="card-meta">LINE: ${esc(w.lineUserId)}</div>
+      <div class="card-meta">登録日時: ${fmtDate(w.registeredAt)}</div>
+      ${w.notifiedAt?`<div class="card-meta">通知日時: ${fmtDate(w.notifiedAt)}</div>`:''}
+    </div>`).join('');
+}
+
+/* ── ユーザー一覧 ─────────────────────────────────────── */
+let usersData=[];
+async function fetchUsers(){
+  setLoading('list-users');
+  try{
+    const data=await apiFetch('/api/admin/users');
+    usersData=data.users||[];renderUsers();
+  }catch(e){setError('list-users',e.message);}
+}
+function renderUsers(){
+  const q=document.getElementById('f-user-name').value.trim().toLowerCase();
+  const list=usersData.filter(u=>!q||(u.name||'').toLowerCase().includes(q));
+  if(!list.length){setEmpty('list-users','該当するユーザーがありません');return;}
+  document.getElementById('list-users').innerHTML=list.map(u=>`
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">${esc(u.name||'（名前なし）')}</span>
+        <div class="card-meta">登録: ${fmtDate(u.registeredAt)}</div>
+      </div>
+      <div class="card-meta">LINE ID: ${esc(u.lineUserId)}</div>
+      ${u.birthdate?`<div class="card-meta">生年月日: ${fmtDateOnly(u.birthdate)}</div>`:'<div class="card-meta" style="color:#cbd5e1;">生年月日: 未登録</div>'}
+      ${u.gender?`<div class="card-meta">性別: ${esc(genderLabel(u.gender))}</div>`:'<div class="card-meta" style="color:#cbd5e1;">性別: 未登録</div>'}
+    </div>`).join('');
+}
+
+/* ── 編集モーダル ─────────────────────────────────────── */
+function toLocalInput(iso){
+  if(!iso)return'';
+  const d=new Date(iso);
+  const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
+}
+function openEditModal(s){
+  document.getElementById('edit-sched-id').value=s.id;
+  document.getElementById('edit-starts-at').value=toLocalInput(s.startsAt);
+  document.getElementById('edit-accept-start').value=toLocalInput(s.acceptStartAt);
+  document.getElementById('edit-accept-end').value=toLocalInput(s.acceptEndAt);
+  document.getElementById('edit-capacity').value=s.capacityOverride!=null?s.capacityOverride:'';
+  document.getElementById('edit-location').value=s.location||'';
+  document.getElementById('edit-note').value=s.note||'';
+  document.getElementById('modal-edit').classList.add('open');
+}
+function closeEditModal(e){if(!e||e.target===document.getElementById('modal-edit'))document.getElementById('modal-edit').classList.remove('open');}
+async function saveScheduleEdit(){
+  const id=document.getElementById('edit-sched-id').value;
+  const payload={
+    startsAt:toIso(document.getElementById('edit-starts-at').value),
+    acceptStartAt:toIso(document.getElementById('edit-accept-start').value),
+    acceptEndAt:toIso(document.getElementById('edit-accept-end').value),
+    capacityOverride:document.getElementById('edit-capacity').value||null,
+    location:document.getElementById('edit-location').value.trim(),
+    note:document.getElementById('edit-note').value.trim(),
+  };
+  try{
+    await apiFetch('/api/admin/schedules/'+id,{method:'PATCH',body:JSON.stringify(payload)});
+    showToast('日程を更新しました');document.getElementById('modal-edit').classList.remove('open');
+    loaded['schedules']=false;await fetchSchedules();
+  }catch(e){showToast(e.message,'error');}
+}
+
+/* ── 非公開モーダル ───────────────────────────────────── */
+function openHideModal(id){
+  document.getElementById('hide-sched-id').value=id;
+  document.getElementById('hide-notify').checked=false;
+  document.getElementById('modal-hide').classList.add('open');
+}
+function closeHideModal(e){if(!e||e.target===document.getElementById('modal-hide'))document.getElementById('modal-hide').classList.remove('open');}
+async function executeHide(){
+  const id=document.getElementById('hide-sched-id').value;
+  const notify=document.getElementById('hide-notify').checked;
+  try{
+    const data=await apiFetch('/api/admin/schedules/'+id+'/hide',{method:'POST',body:JSON.stringify({notifyReservees:notify})});
+    showToast(notify?'非公開にしました（'+data.notifiedCount+'件 LINE通知済み）':'非公開にしました');
+    document.getElementById('modal-hide').classList.remove('open');loaded['schedules']=false;await fetchSchedules();
+  }catch(e){showToast(e.message,'error');}
+}
+
+/* ── キャンセルモーダル ───────────────────────────────── */
+function openCancelModal(id,name,event){
+  document.getElementById('cancel-rsv-id').value=id;
+  document.getElementById('cancel-modal-desc').textContent='「'+name+'」さんの「'+event+'」予約をキャンセルします。';
+  document.getElementById('modal-cancel').classList.add('open');
+}
+function closeCancelModal(e){if(!e||e.target===document.getElementById('modal-cancel'))document.getElementById('modal-cancel').classList.remove('open');}
+async function executeCancel(){
+  const id=document.getElementById('cancel-rsv-id').value;
+  try{
+    await apiFetch('/api/admin/reservations/'+id+'/cancel',{method:'POST'});
+    showToast('予約をキャンセルしました');document.getElementById('modal-cancel').classList.remove('open');
+    loaded['reservations']=false;await fetchReservations();
+  }catch(e){showToast(e.message,'error');}
+}
+
+/* ── ユーティリティ ───────────────────────────────────── */
+function fmtDate(v){
+  if(!v)return'—';
+  return new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(v));
+}
+function fmtDateOnly(v){
+  if(!v)return'—';
+  const s=String(v).slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  return s.replace(/-/g,'/');
+}
+function genderLabel(g){return{male:'男性',female:'女性',other:'その他',prefer_not_to_say:'回答しない'}[g]||g;}
+function statusLabel(s){return{active:'有効',cancelled:'キャンセル済',modified:'変更済'}[s]||s;}
+
+/* ── アンケート機能 ───────────────────────────────────── */
+let svParticipants=[];
+let svSchedulesLoaded=false;
+
+async function svInit(){
+  await svLoadScheduleOptions();
+  await svLoadQuestions();
+}
+
+async function svLoadScheduleOptions(){
+  if(svSchedulesLoaded)return;
+  try{
+    const data=await apiFetch('/api/admin/schedules');
+    const schedules=(data.schedules||[]).filter(s=>!s.isHidden);
+    const sel=document.getElementById('sv-schedule');
+    const rsel=document.getElementById('sv-res-schedule');
+    schedules.forEach(s=>{
+      const label=`${s.eventName} — ${s.datetime||''}`;
+      sel.add(new Option(label,s.id||s.scheduleId));
+      rsel.add(new Option(label,s.id||s.scheduleId));
+    });
+    svSchedulesLoaded=true;
+  }catch(e){showToast('スケジュール取得失敗: '+e.message,'error');}
+}
+
+async function svLoadParticipants(){
+  const scheduleId=document.getElementById('sv-schedule').value;
+  const wrap=document.getElementById('sv-participant-list');
+  if(!scheduleId){
+    wrap.innerHTML='<span style="font-size:13px;color:var(--dim)">スケジュールを選択してください</span>';
+    svParticipants=[];svUpdateSendInfo();return;
+  }
+  wrap.innerHTML='<span style="font-size:13px;color:var(--dim)">読み込み中...</span>';
+  try{
+    const data=await apiFetch('/api/admin/reservations');
+    svParticipants=(data.reservations||[]).filter(r=>r.scheduleId===scheduleId&&r.status!=='cancelled');
+    if(!svParticipants.length){wrap.innerHTML='<span style="font-size:13px;color:var(--dim)">参加者がいません</span>';svUpdateSendInfo();return;}
+    wrap.innerHTML=svParticipants.map(p=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <input type="checkbox" class="sv-p-chk" value="${esc(p.lineUserId)}" checked onchange="svUpdateSendInfo()" style="width:16px;height:16px;cursor:pointer">
+        <span style="flex:1;font-size:13px">${esc(p.name||p.lineUserId)}</span>
+        <span class="badge badge-active">${esc(p.status)}</span>
+      </div>`).join('');
+    svUpdateSendInfo();
+  }catch(e){wrap.innerHTML=`<span style="font-size:13px;color:var(--danger)">${esc(e.message)}</span>`;}
+}
+
+function svSelectAll(){
+  document.querySelectorAll('.sv-p-chk').forEach(c=>c.checked=true);
+  svUpdateSendInfo();
+}
+
+function svUpdateSendInfo(){
+  const n=document.querySelectorAll('.sv-p-chk:checked').length;
+  document.getElementById('sv-send-info').textContent=`${n}名選択中 — ランダム2問を1通で送信`;
+  document.getElementById('sv-send-btn').disabled=n===0;
+}
+
+async function svSend(){
+  const scheduleId=document.getElementById('sv-schedule').value;
+  const module=document.getElementById('sv-module').value;
+  if(!scheduleId)return showToast('スケジュールを選択してください','error');
+  const lineUserIds=[...document.querySelectorAll('.sv-p-chk:checked')].map(c=>c.value);
+  if(!lineUserIds.length)return showToast('送信先を選択してください','error');
+  const btn=document.getElementById('sv-send-btn');
+  btn.disabled=true;btn.textContent='送信中...';
+  try{
+    const data=await apiFetch('/api/admin/survey/send',{method:'POST',body:JSON.stringify({scheduleId,module,lineUserIds})});
+    showToast(`送信完了：${data.successCount}名 / 失敗：${(data.errors||[]).length}名`);
+  }catch(e){showToast('送信失敗: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='アンケートを送信';}
+}
+
+async function svLoadQuestions(){
+  const wrap=document.getElementById('sv-question-list');
+  try{
+    const data=await apiFetch('/api/admin/survey/questions');
+    const qs=data.questions||[];
+    if(!qs.length){wrap.innerHTML='<div class="state-box"><p>質問がありません。追加してください。</p></div>';return;}
+    const modColor={bar:'#3c3489;background:#eeedfe',desk:'#085041;background:#e1f5ee',topic:'#633806;background:#faeeda'};
+    wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:var(--bg)">
+        <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">種別</th>
+        <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">質問文</th>
+        <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">選択肢</th>
+        <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">状態</th>
+        <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">操作</th>
+      </tr></thead>
+      <tbody>${qs.map(q=>{
+        const mc=modColor[q.module]||'#5f5e5a;background:#f0eeea';
+        const opts=svParseOptions(q.options).join(' / ');
+        return `<tr>
+          <td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge" style="color:${mc}">${esc(q.module)}</span></td>
+          <td style="padding:10px 12px;border-bottom:1px solid var(--border);max-width:280px;line-height:1.5">${esc(q.body)}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);max-width:160px">${esc(opts)}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge ${q.isActive?'badge-active':'badge-cancelled'}">${q.isActive?'有効':'無効'}</span></td>
+          <td style="padding:10px 12px;border-bottom:1px solid var(--border)">
+            <div class="btn-row" style="margin-top:0">
+              <button class="btn" onclick="svEditQuestion(${q.id})">編集</button>
+              <button class="btn ${q.isActive?'btn-warning':''}" onclick="svToggleQuestion(${q.id},${!q.isActive})">${q.isActive?'無効化':'有効化'}</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  }catch(e){wrap.innerHTML=`<div class="error-box">${esc(e.message)}</div>`;}
+}
+
+function svParseOptions(str){try{return JSON.parse(str);}catch{return[str];}}
+
+function svOpenQuestionModal(q=null){
+  document.getElementById('sv-modal-title').textContent=q?'質問を編集':'質問を追加';
+  document.getElementById('sv-q-editing-id').value=q?q.id:'';
+  document.getElementById('sv-q-module').value=q?q.module:'bar';
+  document.getElementById('sv-q-body').value=q?q.body:'';
+  document.getElementById('sv-q-options').value=q?svParseOptions(q.options).join('\n'):'';
+  document.getElementById('sv-q-has-free').checked=q?q.hasFree:true;
+  document.getElementById('sv-modal-question').classList.add('open');
+}
+
+function svCloseQuestionModal(e){
+  if(!e||e.target===document.getElementById('sv-modal-question'))
+    document.getElementById('sv-modal-question').classList.remove('open');
+}
+
+async function svEditQuestion(id){
+  try{
+    const data=await apiFetch('/api/admin/survey/questions');
+    const q=(data.questions||[]).find(q=>q.id===id);
+    if(q)svOpenQuestionModal(q);
+  }catch(e){showToast('取得失敗: '+e.message,'error');}
+}
+
+async function svToggleQuestion(id,isActive){
+  try{
+    await apiFetch('/api/admin/survey/questions/'+id,{method:'PATCH',body:JSON.stringify({isActive})});
+    showToast(isActive?'有効化しました':'無効化しました');
+    await svLoadQuestions();
+  }catch(e){showToast('更新失敗: '+e.message,'error');}
+}
+
+async function svSaveQuestion(){
+  const id=document.getElementById('sv-q-editing-id').value;
+  const module=document.getElementById('sv-q-module').value;
+  const body=document.getElementById('sv-q-body').value.trim();
+  const optLines=document.getElementById('sv-q-options').value.trim().split('\n').map(s=>s.trim()).filter(Boolean);
+  const hasFree=document.getElementById('sv-q-has-free').checked;
+  if(!body)return showToast('質問文を入力してください','error');
+  if(optLines.length<2)return showToast('選択肢は2つ以上必要です','error');
+  if(optLines.length>4)return showToast('選択肢は4つまでです','error');
+  const options=JSON.stringify(optLines);
+  try{
+    if(id){
+      await apiFetch('/api/admin/survey/questions/'+id,{method:'PATCH',body:JSON.stringify({module,body,options,hasFree})});
+    }else{
+      await apiFetch('/api/admin/survey/questions',{method:'POST',body:JSON.stringify({module,body,options,hasFree})});
+    }
+    svCloseQuestionModal();await svLoadQuestions();showToast('保存しました');
+  }catch(e){showToast('保存失敗: '+e.message,'error');}
+}
+
+async function svLoadResponses(){
+  const scheduleId=document.getElementById('sv-res-schedule').value;
+  const wrap=document.getElementById('sv-response-list');
+  wrap.innerHTML='<div class="state-box"><div class="spinner"></div><p>読み込み中...</p></div>';
+  try{
+    const path=scheduleId?'/api/admin/survey/responses?scheduleId='+scheduleId:'/api/admin/survey/responses';
+    const data=await apiFetch(path);
+    const rs=data.responses||[];
+    if(!rs.length){wrap.innerHTML='<div class="state-box"><p>回答がありません</p></div>';return;}
+    const stepLabel={1:'Q1未回答',2:'Q2未回答',3:'完了'};
+    const stepColor={1:'var(--warning-light)',2:'var(--accent-light)',3:'var(--success-light)'};
+    wrap.innerHTML=rs.map(r=>`
+      <div class="card" style="margin:10px">
+        <div class="card-header">
+          <div style="font-size:12px;color:var(--muted)">${fmtDate(r.sentAt)}</div>
+          <span class="badge" style="background:${stepColor[r.currentStep]||stepColor[1]}">${stepLabel[r.currentStep]||'—'}</span>
+        </div>
+        <div style="display:grid;gap:8px;margin-top:8px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${esc(r.q1)}</div>
+            <div style="font-size:13px">${r.answer1?esc(r.answer1):'<span style="color:var(--dim)">未回答</span>'}</div>
+            ${r.free1?`<div style="font-size:12px;color:#0ea5e9;font-style:italic;margin-top:2px">"${esc(r.free1)}"</div>`:''}
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${esc(r.q2)}</div>
+            <div style="font-size:13px">${r.answer2?esc(r.answer2):'<span style="color:var(--dim)">未回答</span>'}</div>
+            ${r.free2?`<div style="font-size:12px;color:#0ea5e9;font-style:italic;margin-top:2px">"${esc(r.free2)}"</div>`:''}
+          </div>
+        </div>
+      </div>`).join('');
+  }catch(e){wrap.innerHTML=`<div class="error-box">${esc(e.message)}</div>`;}
+}
+</script>
+</body>
 
 function getKey(){
   const v=document.getElementById('admin-key').value.trim();
