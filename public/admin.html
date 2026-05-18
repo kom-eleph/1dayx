@@ -820,7 +820,7 @@ async function svLoadParticipants(){
   wrap.innerHTML='<span style="font-size:13px;color:var(--dim)">読み込み中...</span>';
   try{
     const data=await apiFetch('/api/admin/reservations');
-    svParticipants=(data.reservations||[]).filter(r=>r.scheduleId===scheduleId&&(r.status==='active'||r.status==='modified'));
+    svParticipants=(data.reservations||[]).filter(r=>r.scheduleId===scheduleId&&r.status==='active');
     if(!svParticipants.length){wrap.innerHTML='<span style="font-size:13px;color:var(--dim)">参加者がいません</span>';svUpdateSendInfo();return;}
     wrap.innerHTML=svParticipants.map(p=>`
       <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">

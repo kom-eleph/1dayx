@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>参加後アンケート</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --text: #1a1714;
+      --muted: #888780;
+      --border: #e5e3dc;
+      --border-active: #1a1714;
+      --accent: #1a1714;
+      --selected-bg: #1a1714;
+      --selected-text: #f5f4f0;
+      --radius: 10px;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* ── ヘッダー ── */
+    .header {
+      margin-bottom: 2.5rem;
+    }
+    .header-label {
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .6rem;
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 300;
+      line-height: 1.5;
+      font-family: "Hiragino Mincho ProN", "Georgia", serif;
+      color: var(--text);
+    }
+
+    /* ── 設問ブロック ── */
+    .q-block {
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .q-block.visible {
+      opacity: 1;
+      transform: none;
+    }
+    .q-num {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .5rem;
+    }
+    .q-body {
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+      font-family: "Hiragino Mincho ProN", "Georgia", serif;
+      font-weight: 400;
+    }
+
+    /* ── 選択肢 ── */
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 16px;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color .15s, background .15s, color .15s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .option:active {
+      background: #f0eeea;
+    }
+    .option.selected {
+      border-color: var(--border-active);
+      background: var(--selected-bg);
+      color: var(--selected-text);
+    }
+    .option-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color .15s, background .15s;
+    }
+    .option.selected .option-dot {
+      border-color: var(--selected-text);
+      background: var(--selected-text);
+    }
+    .option-dot-inner {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--selected-bg);
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .option.selected .option-dot-inner {
+      opacity: 1;
+    }
+    .option-label {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    /* ── 自由記述 ── */
+    .free-block {
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .free-block.visible {
+      opacity: 1;
+      transform: none;
+    }
+    .free-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: .75rem;
+      line-height: 1.5;
+    }
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 14px;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.7;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      transition: border-color .15s;
+      -webkit-appearance: none;
+    }
+    textarea:focus { border-color: var(--border-active); }
+    textarea::placeholder { color: #c8c6be; }
+    .char-count {
+      text-align: right;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+    .char-count.over { color: #d94f4f; }
+
+    /* ── 区切り線 ── */
+    .divider {
+      height: 0.5px;
+      background: var(--border);
+      margin: 0 0 2.5rem;
+      opacity: 0;
+      transition: opacity .35s ease;
+    }
+    .divider.visible { opacity: 1; }
+
+    /* ── 送信ボタン ── */
+    .submit-wrap {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .submit-wrap.visible {
+      opacity: 1;
+      transform: none;
+    }
+    .submit-btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background: var(--accent);
+      color: #f5f4f0;
+      border: none;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: .02em;
+      transition: opacity .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .submit-btn:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+    .submit-btn:not(:disabled):active { opacity: .75; }
+    .skip-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: none;
+      border: none;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      margin-top: .75rem;
+      letter-spacing: .01em;
+    }
+
+    /* ── 完了・ローディング・エラー画面 ── */
+    .state-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      padding: 2rem;
+    }
+    .state-mark {
+      font-size: 28px;
+      margin-bottom: 1.25rem;
+      color: var(--muted);
+    }
+    .state-title {
+      font-size: 18px;
+      font-weight: 300;
+      font-family: "Hiragino Mincho ProN", "Georgia", serif;
+      color: var(--text);
+      line-height: 1.7;
+      margin-bottom: .6rem;
+    }
+    .state-sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      animation: spin .65s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-box {
+      background: #fdf0f0;
+      border: 0.5px solid #f0d0d0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #a32d2d;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root">
+  <div class="state-screen">
+    <div class="spinner"></div>
+    <div class="state-sub">読み込み中...</div>
+  </div>
+</div>
+
+<script>
+const API_BASE  = "https://reservation.1dayx.jp";
+const LIFF_ID   = ""; // ← LINE DevelopersでLIFF IDを発行後に設定
+
+const MAX_CHARS = 200;
+
+let state = {
+  rid: null,
+  q1: null,
+  q2: null,
+  ans1: null,
+  ans2: null,
+  liffToken: null,
+  userId: null,
+};
+
+// ── 初期化 ─────────────────────────────────────────────
+async function init() {
+  const params = new URLSearchParams(location.search);
+  state.rid = params.get("rid");
+
+  if (!state.rid) {
+    renderError("URLが正しくありません。LINEから開き直してください。");
+    return;
+  }
+
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      liff.login({ redirectUri: location.href });
+      return;
+    }
+  } catch (e) {
+    renderError("LINE認証に失敗しました。\n" + e.message);
+    return;
+  }
+
+  try {
+    state.liffToken = liff.getAccessToken();
+    const profile = await liff.getProfile();
+    state.userId = profile.userId;
+  } catch (e) {
+    renderError("プロフィール取得に失敗しました。");
+    return;
+  }
+
+  // 質問データを取得
+  try {
+    const res = await fetch(`${API_BASE}/api/survey/questions/${state.rid}?userId=${state.userId}`, {
+      headers: { "Authorization": `Bearer ${state.liffToken}` },
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      renderError(data.message || "データの取得に失敗しました。");
+      return;
+    }
+    if (data.alreadyAnswered) {
+      renderDone(true);
+      return;
+    }
+
+    state.q1 = data.q1;
+    state.q2 = data.q2;
+    renderForm();
+  } catch (e) {
+    renderError("通信エラーが発生しました。\n" + e.message);
+  }
+}
+
+// ── フォーム描画 ────────────────────────────────────────
+function renderForm() {
+  const hasFree = (state.q1?.hasFree || state.q2?.hasFree);
+
+  document.getElementById("root").innerHTML = `
+    <div class="page" id="page">
+      <div class="header">
+        <div class="header-label">1 day X — アンケート</div>
+        <div class="header-title">今夜のことを<br>少しだけ教えてください。</div>
+      </div>
+
+      ${state.q1 ? renderQBlock(state.q1, 1) : ""}
+
+      <div class="divider" id="divider"></div>
+
+      ${state.q2 ? renderQBlock(state.q2, 2) : ""}
+
+      ${hasFree ? `
+      <div class="free-block" id="free-block">
+        <div class="free-label">よければ一言だけ残してください。（任意）</div>
+        <textarea
+          id="free-text"
+          placeholder="どんな言葉でも。"
+          maxlength="${MAX_CHARS}"
+          oninput="onFreeInput()"
+        ></textarea>
+        <div class="char-count" id="char-count">0 / ${MAX_CHARS}</div>
+      </div>
+      ` : ""}
+
+      <div id="error-area"></div>
+
+      <div class="submit-wrap" id="submit-wrap">
+        <button class="submit-btn" id="submit-btn" onclick="submit()" disabled>
+          送信する
+        </button>
+        <button class="skip-btn" onclick="skip()">回答しない</button>
+      </div>
+    </div>
+  `;
+
+  // アニメーション付きで表示
+  requestAnimationFrame(() => {
+    const els = document.querySelectorAll(".q-block, .divider, .free-block, .submit-wrap");
+    els.forEach((el, i) => {
+      setTimeout(() => el.classList.add("visible"), i * 80);
+    });
+  });
+}
+
+function renderQBlock(q, num) {
+  const opts = q.options || [];
+  const isFreeOnly = opts.length === 0;
+
+  if (isFreeOnly) {
+    return `
+      <div class="q-block" id="q-block-${num}">
+        <div class="q-num">Q${num}</div>
+        <div class="q-body">${escHtml(q.body)}</div>
+      </div>
+    `;
+  }
+
+  const buttons = opts.map(opt => `
+    <div class="option" id="opt-${num}-${escId(opt)}" onclick="selectOption(${num}, '${escAttr(opt)}')">
+      <div class="option-dot"><div class="option-dot-inner"></div></div>
+      <div class="option-label">${escHtml(opt)}</div>
+    </div>
+  `).join("");
+
+  return `
+    <div class="q-block" id="q-block-${num}">
+      <div class="q-num">Q${num}</div>
+      <div class="q-body">${escHtml(q.body)}</div>
+      <div class="options">${buttons}</div>
+    </div>
+  `;
+}
+
+// ── 選択肢タップ ────────────────────────────────────────
+function selectOption(qNum, value) {
+  if (qNum === 1) state.ans1 = value;
+  else state.ans2 = value;
+
+  // 同じ設問の選択肢を全てリセット
+  const q = qNum === 1 ? state.q1 : state.q2;
+  (q.options || []).forEach(opt => {
+    const el = document.getElementById(`opt-${qNum}-${escId(opt)}`);
+    if (el) el.classList.remove("selected");
+  });
+
+  // 選択したものをON
+  const selected = document.getElementById(`opt-${qNum}-${escId(value)}`);
+  if (selected) selected.classList.add("selected");
+
+  updateSubmitBtn();
+}
+
+function updateSubmitBtn() {
+  const btn = document.getElementById("submit-btn");
+  if (!btn) return;
+
+  const q1HasOpts = (state.q1?.options || []).length > 0;
+  const q2HasOpts = (state.q2?.options || []).length > 0;
+  const q1OK = !q1HasOpts || state.ans1 !== null;
+  const q2OK = !q2HasOpts || state.ans2 !== null;
+
+  btn.disabled = !(q1OK && q2OK);
+}
+
+function onFreeInput() {
+  const ta = document.getElementById("free-text");
+  const cc = document.getElementById("char-count");
+  if (!ta || !cc) return;
+  const len = ta.value.length;
+  cc.textContent = `${len} / ${MAX_CHARS}`;
+  cc.classList.toggle("over", len > MAX_CHARS);
+}
+
+// ── 送信 ────────────────────────────────────────────────
+async function submit() {
+  const btn = document.getElementById("submit-btn");
+  const errArea = document.getElementById("error-area");
+  const freeTextEl = document.getElementById("free-text");
+
+  btn.disabled = true;
+  btn.textContent = "送信中...";
+  if (errArea) errArea.innerHTML = "";
+
+  try {
+    const res = await fetch(`${API_BASE}/api/survey/answer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rid: state.rid,
+        answer1: state.ans1 || null,
+        answer2: state.ans2 || null,
+        freeText: freeTextEl ? freeTextEl.value.trim() || null : null,
+        liffToken: state.liffToken,
+        userId: state.userId,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "送信に失敗しました");
+
+    renderDone(false);
+    setTimeout(() => {
+      if (liff.isInClient()) liff.closeWindow();
+    }, 2200);
+
+  } catch (e) {
+    if (errArea) errArea.innerHTML = `<div class="error-box">${escHtml(e.message)}</div>`;
+    btn.disabled = false;
+    btn.textContent = "送信する";
+  }
+}
+
+function skip() {
+  renderDone(false);
+  setTimeout(() => {
+    if (liff.isInClient()) liff.closeWindow();
+  }, 1600);
+}
+
+// ── 完了画面 ────────────────────────────────────────────
+function renderDone(alreadyAnswered) {
+  document.getElementById("root").innerHTML = `
+    <div class="state-screen">
+      <div class="state-mark">✦</div>
+      <div class="state-title">${alreadyAnswered ? "すでに回答いただいています。" : "ありがとうございます。\n大切に読みます。"}</div>
+      <div class="state-sub">このウィンドウを閉じてください。</div>
+    </div>
+  `;
+}
+
+function renderError(msg) {
+  document.getElementById("root").innerHTML = `
+    <div class="state-screen">
+      <div class="error-box">${escHtml(msg)}</div>
+      <div class="state-sub">LINEに戻って開き直してください。</div>
+    </div>
+  `;
+}
+
+// ── ユーティリティ ───────────────────────────────────────
+function escHtml(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, "<br>");
+}
+function escAttr(s) {
+  return String(s || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+}
+function escId(s) {
+  return String(s || "").replace(/[^a-zA-Z0-9ぁ-んァ-ヶー一-龠]/g, "_");
+}
+
+init();
+</script>
+</body>
+</html>
