@@ -297,7 +297,7 @@
 
 <script>
 const API_BASE  = "https://reservation.1dayx.jp";
-const LIFF_ID   = "2010124479-v8HFz7kf"; // ← LINE DevelopersでLIFF IDを発行後に設定
+const LIFF_ID   = ""; // ← LINE DevelopersでLIFF IDを発行後に設定
 
 const MAX_CHARS = 200;
 
@@ -313,13 +313,9 @@ let state = {
 
 // ── 初期化 ─────────────────────────────────────────────
 async function init() {
-  const params = new URLSearchParams(location.search);
-  state.rid = params.get("rid");
-
-  if (!state.rid) {
-    renderError("URLが正しくありません。LINEから開き直してください。");
-    return;
-  }
+  // liff.init() より前にパラメータを保存する（init後にURLが書き換わる場合があるため）
+  const paramsBeforeInit = new URLSearchParams(location.search);
+  const ridBeforeInit = paramsBeforeInit.get("rid");
 
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -329,6 +325,23 @@ async function init() {
     }
   } catch (e) {
     renderError("LINE認証に失敗しました。\n" + e.message);
+    return;
+  }
+
+  // init後にも取得を試みる（リダイレクト後のURL復元に対応）
+  const paramsAfterInit = new URLSearchParams(location.search);
+  const ridAfterInit = paramsAfterInit.get("rid");
+
+  // ハッシュからも取得を試みる（LIFFがクエリパラメータを落とす場合の保険）
+  // 例: survey.html#rid=123
+  const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const ridFromHash = hashParams.get("rid");
+
+  // 優先順位: init前 → init後 → ハッシュ
+  state.rid = ridBeforeInit || ridAfterInit || ridFromHash;
+
+  if (!state.rid) {
+    renderError("URLが正しくありません。LINEから開き直してください。");
     return;
   }
 
