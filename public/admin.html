@@ -1050,25 +1050,45 @@ async function svLoadResponses(){
     if(!rs.length){wrap.innerHTML='<div class="state-box"><p>回答がありません</p></div>';return;}
     const stepLabel={1:'Q1未回答',2:'Q2未回答',3:'完了'};
     const stepColor={1:'var(--warning-light)',2:'var(--accent-light)',3:'var(--success-light)'};
-    wrap.innerHTML=rs.map(r=>`
+    const patColor={'A':'#3b82f6;background:#eff6ff','B':'#059669;background:#ecfdf5','C':'#d97706;background:#fffbeb'};
+    wrap.innerHTML=rs.map(r=>{
+      const pc=patColor[r.pattern||'A']||'#6b7280;background:#f9fafb';
+      const answerRow=(q,ans,free)=>`
+        <div style="padding:10px 0;border-bottom:0.5px solid var(--border)">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.5">${esc(q)}</div>
+          <div style="font-size:13px;font-weight:500;color:${ans?'var(--text)':'var(--dim)'}">
+            ${ans?esc(ans):'未回答'}
+          </div>
+          ${free?`<div style="font-size:12px;color:var(--accent);margin-top:5px;padding:6px 10px;background:var(--accent-light);border-radius:6px;line-height:1.6">"${esc(free)}"</div>`:''}
+        </div>`;
+      return `
       <div class="card" style="margin:10px">
         <div class="card-header">
-          <div style="font-size:12px;color:var(--muted)">${fmtDate(r.sentAt)}</div>
-          <span class="badge" style="background:${stepColor[r.currentStep]||stepColor[1]}">${stepLabel[r.currentStep]||'—'}</span>
-        </div>
-        <div style="display:grid;gap:8px;margin-top:8px">
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${esc(r.q1)}</div>
-            <div style="font-size:13px">${r.answer1?esc(r.answer1):'<span style="color:var(--dim)">未回答</span>'}</div>
-            ${r.free1?`<div style="font-size:12px;color:#0ea5e9;font-style:italic;margin-top:2px">"${esc(r.free1)}"</div>`:''}
+            <div style="font-size:14px;font-weight:600;color:var(--text)">${esc(r.userName||'（名前なし）')}</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:2px;font-family:monospace">${esc(r.lineUserId)}</div>
           </div>
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${esc(r.q2)}</div>
-            <div style="font-size:13px">${r.answer2?esc(r.answer2):'<span style="color:var(--dim)">未回答</span>'}</div>
-            ${r.free2?`<div style="font-size:12px;color:#0ea5e9;font-style:italic;margin-top:2px">"${esc(r.free2)}"</div>`:''}
+          <span class="badge" style="background:${stepColor[r.currentStep]||stepColor[1]};flex-shrink:0">${stepLabel[r.currentStep]||'—'}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px;align-items:center">
+          ${r.eventName?`<span class="badge badge-active" style="font-size:10px">${esc(r.eventName)}</span>`:''}
+          ${r.datetime?`<span style="font-size:11px;color:var(--muted)">📅 ${esc(r.datetime)}</span>`:''}
+          ${r.pattern?`<span class="badge" style="color:${pc};font-size:10px">Pattern ${esc(r.pattern)}</span>`:''}
+          <span style="font-size:11px;color:var(--dim);margin-left:auto">${fmtDate(r.sentAt)}</span>
+        </div>
+        <div style="border-top:0.5px solid var(--border)">
+          ${answerRow(r.q1,r.answer1,r.free1)}
+          <div style="padding:10px 0">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.5">${esc(r.q2)}</div>
+            <div style="font-size:13px;font-weight:500;color:${r.answer2?'var(--text)':'var(--dim)'}">
+              ${r.answer2?esc(r.answer2):'未回答'}
+            </div>
+            ${r.free2?`<div style="font-size:12px;color:var(--accent);margin-top:5px;padding:6px 10px;background:var(--accent-light);border-radius:6px;line-height:1.6">"${esc(r.free2)}"</div>`:''}
           </div>
         </div>
-      </div>`).join('');
+        ${r.completedAt?`<div style="font-size:11px;color:var(--success);margin-top:6px">✔ 完了: ${fmtDate(r.completedAt)}</div>`:''}
+      </div>`;
+    }).join('');
   }catch(e){wrap.innerHTML=`<div class="error-box">${esc(e.message)}</div>`;}
 }
 </script>
