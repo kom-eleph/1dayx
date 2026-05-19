@@ -139,8 +139,8 @@
       #sv-question-list tr{display:grid;gap:4px;padding:10px;border:1px solid var(--border);border-radius:8px}
       #sv-question-list td{display:flex;gap:6px;font-size:12px;padding:2px 0!important;border:none!important;max-width:100%!important}
       #sv-question-list td::before{font-weight:600;color:var(--muted);white-space:nowrap;font-size:11px;min-width:44px}
-      #sv-question-list td:nth-child(1)::before{content:'#'}
-      #sv-question-list td:nth-child(2)::before{content:'種別'}
+      #sv-question-list td:nth-child(1)::before{content:'種別'}
+      #sv-question-list td:nth-child(2)::before{content:'P/Q'}
       #sv-question-list td:nth-child(3)::before{content:'質問文'}
       #sv-question-list td:nth-child(3){align-items:flex-start;line-height:1.6}
       #sv-question-list td:nth-child(4)::before{content:'選択肢'}
@@ -396,17 +396,34 @@
   <div class="modal">
     <h3 id="sv-modal-title">質問を追加</h3>
     <div class="form-grid">
-      <div class="form-group">
-        <label>種別</label>
-        <select id="sv-q-module">
-          <option value="bar">bar</option>
-          <option value="desk">desk</option>
-          <option value="topic">topic</option>
-        </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label>種別</label>
+          <select id="sv-q-module">
+            <option value="bar">bar</option>
+            <option value="desk">desk</option>
+            <option value="topic">topic</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>パターン</label>
+          <select id="sv-q-pattern">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Q番号</label>
+          <select id="sv-q-index">
+            <option value="1">Q1（日常・余白）</option>
+            <option value="2">Q2（固有）</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label>質問文</label>
-        <textarea id="sv-q-body" placeholder="例：今夜、名前を知らなかった誰かと、何かが交わりましたか。"></textarea>
+        <textarea id="sv-q-body" placeholder="例：最近、自分から誰かに話しかけたのはいつですか。"></textarea>
       </div>
       <div class="form-group">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
@@ -918,6 +935,7 @@ async function svLoadQuestions(){
     wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead><tr style="background:var(--bg)">
         <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">種別</th>
+        <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">P / Q</th>
         <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">質問文</th>
         <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">選択肢</th>
         <th style="padding:8px 12px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">状態</th>
@@ -926,9 +944,15 @@ async function svLoadQuestions(){
       <tbody>${qs.map(q=>{
         const mc=modColor[q.module]||'#5f5e5a;background:#f0eeea';
         const opts=svParseOptions(q.options).join(' / ');
+        const patColor={'A':'#3b82f6;background:#eff6ff','B':'#059669;background:#ecfdf5','C':'#d97706;background:#fffbeb'};
+        const pc=patColor[q.pattern||'A']||'#6b7280;background:#f9fafb';
         return `<tr>
           <td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge" style="color:${mc}">${esc(q.module)}</span></td>
-          <td style="padding:10px 12px;border-bottom:1px solid var(--border);max-width:280px;line-height:1.5">${esc(q.body)}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap">
+            <span class="badge" style="color:${pc}">${esc(q.pattern||'A')}</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:4px">Q${q.qIndex||1}</span>
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid var(--border);max-width:240px;line-height:1.5">${esc(q.body)}</td>
           <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);max-width:160px">${esc(opts)}</td>
           <td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge ${q.isActive?'badge-active':'badge-cancelled'}">${q.isActive?'有効':'無効'}</span></td>
           <td style="padding:10px 12px;border-bottom:1px solid var(--border)">
@@ -954,6 +978,8 @@ function svOpenQuestionModal(q=null){
   document.getElementById('sv-modal-title').textContent=q?'質問を編集':'質問を追加';
   document.getElementById('sv-q-editing-id').value=q?q.id:'';
   document.getElementById('sv-q-module').value=q?q.module:'bar';
+  document.getElementById('sv-q-pattern').value=q?(q.pattern||'A'):'A';
+  document.getElementById('sv-q-index').value=q?(q.qIndex||1):1;
   document.getElementById('sv-q-body').value=q?q.body:'';
   const opts=q?svParseOptions(q.options):[];
   const isFreeOnly=q?(opts.length===0):false;
@@ -988,6 +1014,8 @@ async function svToggleQuestion(id,isActive){
 async function svSaveQuestion(){
   const id=document.getElementById('sv-q-editing-id').value;
   const module=document.getElementById('sv-q-module').value;
+  const pattern=document.getElementById('sv-q-pattern').value;
+  const qIndex=parseInt(document.getElementById('sv-q-index').value,10);
   const body=document.getElementById('sv-q-body').value.trim();
   const isFreeOnly=document.getElementById('sv-q-free-only').checked;
   const hasFree=isFreeOnly?true:document.getElementById('sv-q-has-free').checked;
@@ -1003,9 +1031,9 @@ async function svSaveQuestion(){
   }
   try{
     if(id){
-      await apiFetch('/api/admin/survey/questions/'+id,{method:'PATCH',body:JSON.stringify({module,body,options,hasFree})});
+      await apiFetch('/api/admin/survey/questions/'+id,{method:'PATCH',body:JSON.stringify({module,pattern,qIndex,body,options,hasFree})});
     }else{
-      await apiFetch('/api/admin/survey/questions',{method:'POST',body:JSON.stringify({module,body,options,hasFree})});
+      await apiFetch('/api/admin/survey/questions',{method:'POST',body:JSON.stringify({module,pattern,qIndex,body,options,hasFree})});
     }
     svCloseQuestionModal();await svLoadQuestions();showToast('保存しました');
   }catch(e){showToast('保存失敗: '+e.message,'error');}
