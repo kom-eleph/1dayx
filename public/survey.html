@@ -9,15 +9,16 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #f5f4f0;
+      --bg: #eef8fa;
       --surface: #ffffff;
-      --text: #1a1714;
-      --muted: #888780;
-      --border: #e5e3dc;
-      --border-active: #1a1714;
-      --accent: #1a1714;
-      --selected-bg: #1a1714;
-      --selected-text: #f5f4f0;
+      --text: #0f3a42;
+      --muted: #6b9ea8;
+      --border: #c0dfe5;
+      --border-active: #00A5BF;
+      --accent: #00A5BF;
+      --accent-dark: #007A8F;
+      --selected-bg: #00A5BF;
+      --selected-text: #ffffff;
       --radius: 10px;
     }
 
@@ -101,7 +102,7 @@
       user-select: none;
     }
     .option:active {
-      background: #f0eeea;
+      background: #d6f2f7;
     }
     .option.selected {
       border-color: var(--border-active);
@@ -207,7 +208,7 @@
       width: 100%;
       padding: 15px;
       background: var(--accent);
-      color: #f5f4f0;
+      color: #ffffff;
       border: none;
       border-radius: 999px;
       font-size: 15px;
@@ -221,7 +222,8 @@
       opacity: .3;
       cursor: not-allowed;
     }
-    .submit-btn:not(:disabled):active { opacity: .75; }
+    .submit-btn:not(:disabled):hover { background: var(--accent-dark); }
+    .submit-btn:not(:disabled):active { opacity: .85; }
     .skip-btn {
       display: block;
       width: 100%;
@@ -267,7 +269,7 @@
       width: 24px;
       height: 24px;
       border: 2px solid var(--border);
-      border-top-color: var(--text);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin .65s linear infinite;
       margin: 0 auto 1.5rem;
@@ -386,7 +388,7 @@ function renderForm() {
     <div class="page" id="page">
       <div class="header">
         <div class="header-label">1 day X — アンケート</div>
-        <div class="header-title">今夜のことを<br>少しだけ教えてください。</div>
+        <div class="header-title">今日のことを<br>少しだけ教えてください。</div>
       </div>
 
       ${state.q1 ? renderQBlock(state.q1, 1) : ""}
